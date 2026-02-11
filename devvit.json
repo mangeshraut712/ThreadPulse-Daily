@@ -1,0 +1,12 @@
+{
+    "name": "threadpulsedaily",
+    "post": {
+        "dir": "webroot",
+        "entrypoints": {
+            "default": {
+                "entry": "index.html",
+                "height": "tall"
+            }
+        }
+    }
+}

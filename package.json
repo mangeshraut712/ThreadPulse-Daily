@@ -1,0 +1,14 @@
+{
+  "name": "threadpulsedaily",
+  "version": "0.0.0",
+  "license": "BSD-3-Clause",
+  "type": "module",
+  "dependencies": {
+    "@devvit/public-api": "0.12.12"
+  },
+  "scripts": {
+    "dev": "devvit upload",
+    "publish": "devvit upload --publish"
+  },
+  "private": true
+}

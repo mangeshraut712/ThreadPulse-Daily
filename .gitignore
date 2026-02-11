@@ -1,0 +1,14 @@
+# Devvit and Node
+node_modules/
+.npm-cache/
+.devvit/
+dist/
+*.log
+
+# Environment and Secrets
+.env
+.npmrc
+
+# OS files
+.DS_Store
+Thumbs.db

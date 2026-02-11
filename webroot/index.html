@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="description"
+    content="ThreadPulse Daily — A community-powered daily word puzzle game for Reddit. Guess the word, unlock hints, contribute clues." />
+  <meta name="theme-color" content="#FF4500" />
+  <meta name="color-scheme" content="light dark" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="ThreadPulse Daily — Reddit's Daily Puzzle Game" />
+  <meta property="og:description"
+    content="Guess the Reddit-themed word. Unlock hints. Share your score. Come back every day for a new challenge." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://threadpulse-daily.reddit.com" />
+
+  <!-- PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ThreadPulse" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+
+  <!-- Reddit Integration -->
+  <meta name="reddit:app_name" content="ThreadPulse Daily" />
+  <meta name="reddit:app_id" content="threadpulse-daily" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap"
+    rel="stylesheet" />
+
+  <title>ThreadPulse Daily — Reddit's Daily Puzzle Game</title>
+
+  <style>
+    /* Inline critical loading screen styles to prevent FOUC */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #F8F9FA;
+      color: #1A1A2E;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #0B1622;
+        color: #F0F2F5;
+      }
+
+      #loading-screen {
+        background: #0B1622 !important;
+      }
+
+      .loading-bar-track {
+        background: #1E2D3F !important;
+      }
+    }
+
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      background: #F8F9FA;
+      z-index: 9999;
+      transition: opacity .4s ease;
+      gap: 1.5rem;
+    }
+
+    .loading-brand {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .loading-brand-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #FF4500, #FF6B35);
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 20px rgba(255, 69, 0, .25);
+    }
+
+    .loading-brand-text {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #FF4500, #FF6ACB);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .loading-subtitle {
+      font-size: .8rem;
+      color: #8A8D91;
+      font-weight: 500;
+    }
+
+    .loading-bar-track {
+      width: 200px;
+      height: 3px;
+      background: #E4E6EB;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .loading-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #FF4500, #FFB800);
+      border-radius: 99px;
+      animation: loading-anim 1.5s ease-in-out infinite;
+    }
+
+    @keyframes loading-anim {
+      0% {
+        width: 0;
+        margin-left: 0;
+      }
+
+      50% {
+        width: 60%;
+        margin-left: 20%;
+      }
+
+      100% {
+        width: 0;
+        margin-left: 100%;
+      }
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/js/index-BKb30TuP.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/js/vendor-DDxydHEc.js">
+  <link rel="modulepreload" crossorigin href="/assets/js/animation-BXzQqAVY.js">
+  <link rel="stylesheet" crossorigin href="/assets/css/index-soM1mGWv.css">
+<script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+
+<body>
+  <!-- Loading Screen (hidden by React when ready) -->
+  <div id="loading-screen">
+    <div class="loading-brand">
+      <div class="loading-brand-icon">🧩</div>
+      <span class="loading-brand-text">ThreadPulse Daily</span>
+    </div>
+    <div class="loading-subtitle">Loading today's puzzle...</div>
+    <div class="loading-bar-track">
+      <div class="loading-bar-fill"></div>
+    </div>
+  </div>
+
+  <!-- React Root -->
+  <div id="root"></div>
+
+  <!-- Service Worker for PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('[SW] registered:', reg.scope))
+          .catch(err => console.warn('[SW] registration failed:', err));
+      });
+    }
+  </script>
+</body>
+
+</html>
