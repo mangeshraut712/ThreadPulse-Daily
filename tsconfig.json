@@ -1,19 +1,70 @@
 {
-    "compilerOptions": {
-        "target": "es2020",
-        "module": "es2020",
-        "moduleResolution": "node",
-        "strict": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true,
-        "outDir": "./dist",
-        "jsx": "react",
-        "jsxFactory": "Devvit.createElement",
-        "jsxFragmentFactory": "Devvit.Fragment",
-        "types": []
-    },
-    "include": [
-        "src"
-    ]
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "node",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "allowJs": true,
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "checkJs": false,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": [
+      "node",
+      "react",
+      "react-dom"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@/components/*": [
+        "src/components/*"
+      ],
+      "@/hooks/*": [
+        "src/hooks/*"
+      ],
+      "@/utils/*": [
+        "src/utils/*"
+      ],
+      "@/types/*": [
+        "src/types/*"
+      ],
+      "@/wasm/*": [
+        "packages/wasm/pkg/*"
+      ],
+      "@/gamemaker/*": [
+        "packages/gamemaker/dist/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*",
+    "packages/wasm/pkg/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "apps/devvit",
+    "vite.config.ts"
+  ]
 }

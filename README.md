@@ -7,6 +7,7 @@
 ---
 
 ### 📍 Project Links
+- **Video Demo:** [Watch the Demo on GitHub](https://github.com/mangeshraut712/ThreadPulse-Daily/blob/main/apps/devvit/assets/Demo.mov?raw=true)
 - **Live Demo (Reddit):** [r/ThreadPulse2026](https://www.reddit.com/r/ThreadPulse2026)
 - **Source Code:** [GitHub Repository](https://github.com/mangeshraut712/ThreadPulse-Daily)
 - **Developer Portal:** [Reddit Apps Dashboard](https://developers.reddit.com/apps/threadpulsedaily)
@@ -122,7 +123,7 @@ ThreadPulse Daily runs natively on Reddit via the **Devvit** platform:
 | **Animations** | GameMaker-compatible CSS animation system (zero JS overhead) |
 | **Mobile** | Haptic Feedback API, touch gesture detection |
 | **PWA** | Installable, offline-capable, service worker |
-| **Reddit** | Devvit Public API 0.10.25, Custom Post Type, Redis |
+| **Reddit** | Devvit Public API 0.12.0, Custom Post Type, Redis |
 | **Fonts** | Sora (headings) + JetBrains Mono (scores/timer) |
 
 ---

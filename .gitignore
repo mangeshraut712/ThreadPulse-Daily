@@ -1,3 +1,23 @@
+# Dependencies
+node_modules/
+apps/devvit/node_modules/
+
+# Build output
+dist/
+
+# Local cache
+.npm-cache/
+
+# Logs
+npm-debug.log*
+*.log
+
+# Internal Planning
+.internal/
+
+# WASM
+packages/wasm/pkg/
+package-lock.json.tmp
 # Devvit and Node
 node_modules/
 .npm-cache/

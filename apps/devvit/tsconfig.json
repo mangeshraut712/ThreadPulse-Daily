@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "target": "es2020",
+        "module": "es2020",
+        "moduleResolution": "node",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "outDir": "./dist",
+        "jsx": "react",
+        "jsxFactory": "Devvit.createElement",
+        "jsxFragmentFactory": "Devvit.Fragment",
+        "types": []
+    },
+    "include": [
+        "src"
+    ]
+}

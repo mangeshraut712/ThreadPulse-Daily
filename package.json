@@ -1,14 +1,87 @@
 {
-  "name": "threadpulsedaily",
-  "version": "0.0.0",
-  "license": "BSD-3-Clause",
+  "name": "threadpulse-daily",
+  "version": "2026.1.0",
+  "description": "ThreadPulse Daily — A community-powered daily word puzzle game for Reddit.",
   "type": "module",
-  "dependencies": {
-    "@devvit/public-api": "0.12.12"
-  },
+  "private": true,
   "scripts": {
-    "dev": "devvit upload",
-    "publish": "devvit upload --publish"
+    "dev": "vite",
+    "build": "vite build",
+    "build:devvit": "node scripts/build-devvit.mjs",
+    "preview": "vite preview",
+    "test": "node scripts/self-test.mjs",
+    "simulate": "node scripts/simulateGame.mjs",
+    "balance": "node scripts/balance-check.mjs",
+    "check:submission": "node scripts/submission-check.mjs",
+    "verify:final": "node scripts/final-verify.mjs",
+    "qa": "npm run test && npm run balance && npm run check:submission && npm run verify:final"
   },
-  "private": true
+  "dependencies": {
+    "@devvit/public-api": "^0.10.21",
+    "@tensorflow/tfjs": "^4.15.0",
+    "@types/babel__core": "^7.20.5",
+    "@types/babel__generator": "^7.27.0",
+    "@types/babel__template": "^7.4.4",
+    "@types/babel__traverse": "^7.28.0",
+    "@types/json-schema": "^7.0.15",
+    "@types/long": "^4.0.2",
+    "@types/node": "^25.2.0",
+    "@types/node-fetch": "^2.6.13",
+    "@types/offscreencanvas": "^2019.7.3",
+    "@types/prop-types": "^15.7.15",
+    "@types/seedrandom": "^3.0.8",
+    "@types/semver": "^7.7.1",
+    "comlink": "^4.4.1",
+    "framer-motion": "^10.16.16",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-spring": "^9.7.3",
+    "web-vitals": "^3.5.0",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.27",
+    "@types/react-dom": "^18.3.7",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.3.6",
+    "typescript": "^5.7.3",
+    "vite": "^6.4.1",
+    "vite-plugin-pwa": "^0.17.5",
+    "vitest": "^1.0.4",
+    "wasm-pack": "^0.12.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "reddit",
+    "devvit",
+    "game",
+    "ai",
+    "gamemaker",
+    "webassembly",
+    "mobile",
+    "pwa",
+    "hackathon",
+    "daily-games",
+    "tensorflow",
+    "typescript"
+  ],
+  "author": "ThreadPulse Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/threadpulse/threadpulse-daily-2026"
+  },
+  "bugs": {
+    "url": "https://github.com/threadpulse/threadpulse-daily-2026/issues"
+  },
+  "homepage": "https://threadpulse-daily.reddit.com"
 }
