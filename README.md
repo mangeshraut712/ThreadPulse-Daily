@@ -6,6 +6,13 @@
 
 ---
 
+### 📍 Project Links
+- **Live Demo (Reddit):** [r/ThreadPulse2026](https://www.reddit.com/r/ThreadPulse2026)
+- **Source Code:** [GitHub Repository](https://github.com/mangeshraut712/ThreadPulse-Daily)
+- **Developer Portal:** [Reddit Apps Dashboard](https://developers.reddit.com/apps/threadpulsedaily)
+
+---
+
 ## ✨ What is ThreadPulse Daily?
 
 ThreadPulse Daily is a **Wordle-style daily puzzle game** where players guess Reddit-themed words using progressive hints. Each day brings a new puzzle drawn from Reddit culture, memes, community inside jokes, and platform mechanics.
