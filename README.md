@@ -254,3 +254,20 @@ MIT License. Built for the Reddit Daily Games Hackathon 2026.
 ---
 
 *Made with ❤️ for the Reddit community.*
+
+---
+
+<!-- codex:project-diagram:start -->
+
+## Project Diagram
+
+```mermaid
+flowchart LR
+    A["Browser"] --> B["Frontend App"]
+    B --> C["API / Serverless"]
+    C --> D["Deploy"]
+```
+
+_High-level flow of the deployed web experience and supporting services._
+
+<!-- codex:project-diagram:end -->
