@@ -1,16 +1,40 @@
-# 🧩 ThreadPulse Daily
+<div align="center">
 
-**A community-powered daily word puzzle game built for the Reddit ecosystem.**
+# ThreadPulse Daily
 
-> *Reddit Daily Games Hackathon 2026*
+### A community-powered daily word puzzle game for Reddit.
+
+[![Live Demo](https://img.shields.io/badge/Live_Demo-r%2FThreadPulse2026-ff4500?style=for-the-badge&logo=reddit&logoColor=white)](https://www.reddit.com/r/ThreadPulse2026)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-ThreadPulse--Daily-181717?style=for-the-badge&logo=github)](https://github.com/mangeshraut712/ThreadPulse-Daily)
+[![Reddit Apps](https://img.shields.io/badge/Reddit_Apps-Dashboard-ff4500?style=for-the-badge&logo=reddit&logoColor=white)](https://developers.reddit.com/apps/threadpulsedaily)
+[![MIT License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+
+**Reddit Daily Games Hackathon 2026**
+
+</div>
 
 ---
 
-### 📍 Project Links
-- **Video Demo:** [Watch the Demo on GitHub](https://github.com/mangeshraut712/ThreadPulse-Daily/blob/main/apps/devvit/assets/Demo.mov?raw=true)
-- **Live Demo (Reddit):** [r/ThreadPulse2026](https://www.reddit.com/r/ThreadPulse2026)
-- **Source Code:** [GitHub Repository](https://github.com/mangeshraut712/ThreadPulse-Daily)
-- **Developer Portal:** [Reddit Apps Dashboard](https://developers.reddit.com/apps/threadpulsedaily)
+## Table of Contents
+
+- [Overview](#what-is-threadpulse-daily)
+- [How to Play](#how-to-play)
+- [Scoring](#scoring)
+- [Hackathon Alignment](#hackathon-alignment)
+- [Features](#features)
+- [Reddit Integration](#reddit-integration)
+- [Tech Stack](#tech-stack)
+- [Puzzle Categories](#puzzle-categories)
+- [Project Structure](#project-structure)
+- [Quick Start](#quick-start)
+- [Scripts](#scripts)
+- [Architecture Decisions](#architecture-decisions)
+- [Testing](#testing)
+- [Acknowledgments](#acknowledgments)
+- [License](#license)
+- [Contact](#contact)
+
+---
 
 ---
 
@@ -212,6 +236,23 @@ npm run qa
 
 ---
 
+## Scripts
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Vite dev server |
+| `npm run build` | Build the production web bundle |
+| `npm run build:devvit` | Prepare the Devvit deployment bundle |
+| `npm run preview` | Preview the built app locally |
+| `npm run test` | Run the self-test suite |
+| `npm run simulate` | Run gameplay simulations |
+| `npm run balance` | Check scoring and puzzle balance |
+| `npm run check:submission` | Validate the hackathon submission package |
+| `npm run verify:final` | Run the final verification suite |
+| `npm run qa` | Run the full validation chain |
+
+---
+
 ## 🏗 Architecture Decisions
 
 1. **No external CSS framework** — Custom design tokens for maximum control and performance
@@ -244,6 +285,14 @@ npm run qa             # Run all of the above
 - **GameMaker** — For the animation system tools
 - **TensorFlow.js** — For AI/ML capabilities
 - **The Reddit Community** — For inspiring all the puzzle content
+
+---
+
+## Contact
+
+- GitHub issues: https://github.com/mangeshraut712/ThreadPulse-Daily/issues
+- Reddit community: https://www.reddit.com/r/ThreadPulse2026
+- Developer portal: https://developers.reddit.com/apps/threadpulsedaily
 
 ---
 
