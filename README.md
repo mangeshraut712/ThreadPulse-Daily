@@ -1,12 +1,28 @@
-# 🧩 ThreadPulse Daily
+# ThreadPulse Daily
 
-**A community-powered daily word puzzle game built for the Reddit ecosystem.**
+A **Wordle-style daily word puzzle** for Reddit: guess a Reddit-themed word, unlock progressive hints, share your score, and leave community clues for the next player.
 
-> *Reddit Daily Games Hackathon 2026*
+> Reddit Daily Games Hackathon 2026 · Play → Guess → Share → Community Clues → Repeat.
+
+## Product screenshots
+
+Live UI captured from a local production preview (`npm run build && npm run preview`) of the running game.
+
+**Home / daily puzzle** — today's card, the free first hint, remaining locked hints, guess input, and the community-clues panel.
+
+![Home: daily puzzle board with first hint and guess input](docs/screenshots/01-home.png)
+
+**Hints, guesses, and community clues** — unlocked progressive hints, a recorded wrong guess, and the clue composer.
+
+![Feature: unlocked hints, guess history, and community clue composer](docs/screenshots/02-feature.png)
+
+**Result modal** — score, streak, emoji grid, and share to Reddit / clipboard / X after a solve.
+
+![Result modal after solving the daily puzzle](docs/screenshots/03-result.png)
 
 ---
 
-### 📍 Project Links
+### Project links
 - **Video Demo:** [Watch the Demo on GitHub](https://github.com/mangeshraut712/ThreadPulse-Daily/blob/main/apps/devvit/assets/Demo.mov?raw=true)
 - **Live Demo (Reddit):** [r/ThreadPulse2026](https://www.reddit.com/r/ThreadPulse2026)
 - **Source Code:** [GitHub Repository](https://github.com/mangeshraut712/ThreadPulse-Daily)
@@ -14,13 +30,11 @@
 
 ---
 
-## ✨ What is ThreadPulse Daily?
+## What is ThreadPulse Daily?
 
-ThreadPulse Daily is a **Wordle-style daily puzzle game** where players guess Reddit-themed words using progressive hints. Each day brings a new puzzle drawn from Reddit culture, memes, community inside jokes, and platform mechanics.
+Each day brings a new puzzle drawn from Reddit culture, memes, community inside jokes, and platform mechanics. The same date-seeded puzzle is served to every player at midnight UTC.
 
-**Play → Guess → Share → Community Clues → Repeat.**
-
-### 🎮 How to Play
+### How to Play
 
 1. **Start the daily puzzle** — A new puzzle appears every day at midnight UTC, seeded by date so every player gets the same challenge
 2. **Read the first hint** — The first hint is always free and gives you a starting point
@@ -29,7 +43,7 @@ ThreadPulse Daily is a **Wordle-style daily puzzle game** where players guess Re
 5. **Check community clues** — Read clues submitted by other players, or contribute your own
 6. **Share your result** — Share your Wordle-style emoji grid on Reddit, X, or copy to clipboard
 
-### 🎯 Scoring
+### Scoring
 
 | Factor | Effect |
 |---|---|
@@ -43,7 +57,7 @@ ThreadPulse Daily is a **Wordle-style daily puzzle game** where players guess Re
 
 ---
 
-## 🏆 Hackathon Alignment
+## Hackathon alignment
 
 | Criterion | How ThreadPulse Delivers |
 |---|---|
@@ -55,7 +69,7 @@ ThreadPulse Daily is a **Wordle-style daily puzzle game** where players guess Re
 
 ---
 
-## 🎨 Features
+## Features
 
 ### Core Gameplay
 - **Daily puzzle** — Date-seeded, same puzzle for everyone each day (UTC midnight)
