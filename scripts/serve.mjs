@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 import { createReadStream, existsSync, statSync } from "node:fs";
-import { extname, join, normalize } from "node:path";
+import { extname, join, resolve, sep } from "node:path";
 
 const port = Number(process.env.PORT || 4173);
 const host = process.env.HOST || "127.0.0.1";
@@ -16,10 +16,12 @@ const mimeTypes = {
 };
 
 function resolvePath(urlPath) {
-  const decoded = decodeURIComponent(urlPath);
+  const decoded = decodeURIComponent((urlPath || "/").split("?")[0]);
   const normalizedInput = decoded.startsWith("/web/") ? decoded.replace("/web/", "/") : decoded;
-  const cleanPath = normalize(normalizedInput).replace(/^\.\.+/, "");
-  let target = join(root, cleanPath === "/" ? "index.html" : cleanPath.slice(1));
+  const relative = normalizedInput.replace(/^\/+/, "");
+  let target = resolve(root, relative === "" ? "index.html" : relative);
+  const rootResolved = resolve(root) + sep;
+  if (target !== resolve(root) && !target.startsWith(rootResolved)) return null;
 
   if (existsSync(target) && statSync(target).isDirectory()) {
     target = join(target, "index.html");
@@ -36,7 +38,7 @@ function resolvePath(urlPath) {
 const server = createServer((req, res) => {
   const target = resolvePath(req.url || "/");
 
-  if (!existsSync(target)) {
+  if (!target || !existsSync(target)) {
     res.statusCode = 404;
     res.end("Not found");
     return;

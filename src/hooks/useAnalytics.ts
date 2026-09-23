@@ -459,16 +459,22 @@ export function useAnalytics() {
   };
 
   // Generate unique IDs
+  const randomToken = (bytes = 16): string => {
+    const values = new Uint8Array(bytes);
+    crypto.getRandomValues(values);
+    return Array.from(values, (value) => value.toString(16).padStart(2, '0')).join('');
+  };
+
   const generateSessionId = (): string => {
-    return 'session_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9);
+    return 'session_' + randomToken();
   };
 
   const generateUserId = (): string => {
-    return 'user_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9);
+    return 'user_' + randomToken();
   };
 
   const generateEventId = (): string => {
-    return Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 5);
+    return randomToken(8);
   };
 
   // Cleanup

@@ -80,8 +80,16 @@ async function r(e) {
 function p(e) {
   return l.some((s) => e.includes(s)) || e.includes(".js") || e.includes(".css") || e.includes(".wasm") || e.includes(".png") || e.includes(".jpg") || e.includes(".svg");
 }
+function hostIs(value, host) {
+  try {
+    const name = new URL(value).hostname.toLowerCase();
+    return name === host || name.endsWith("." + host);
+  } catch {
+    return false;
+  }
+}
 function y(e) {
-  return e.includes("/api/") || e.includes("reddit.com") || e.includes("developers.reddit.com");
+  return e.includes("/api/") || hostIs(e, "reddit.com") || hostIs(e, "developers.reddit.com");
 }
 self.addEventListener("sync", (e) => {
   console.log("🔄 Background sync triggered:", e.tag), e.tag === "background-sync-guesses" ? e.waitUntil(k()) : e.tag === "background-sync-clues" && e.waitUntil(w());

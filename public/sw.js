@@ -175,10 +175,18 @@ function isStaticAsset(url) {
          url.includes('.svg');
 }
 
+
+function hostIs(value, host) {
+  try {
+    const name = new URL(value).hostname.toLowerCase();
+    return name === host || name.endsWith('.' + host);
+  } catch {
+    return false;
+  }
+}
+
 function isAPIRequest(url) {
-  return url.includes('/api/') || 
-         url.includes('reddit.com') ||
-         url.includes('developers.reddit.com');
+  return url.includes('/api/') || hostIs(url, 'reddit.com') || hostIs(url, 'developers.reddit.com');
 }
 
 // Background sync for offline actions
