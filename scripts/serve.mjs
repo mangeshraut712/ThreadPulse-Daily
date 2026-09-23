@@ -16,29 +16,45 @@ const mimeTypes = {
 };
 
 function resolvePath(urlPath) {
-  const decoded = decodeURIComponent((urlPath || "/").split("?")[0]);
-  const normalizedInput = decoded.startsWith("/web/") ? decoded.replace("/web/", "/") : decoded;
-  const relative = normalizedInput.replace(/^\/+/, "");
-  let target = resolve(root, relative === "" ? "index.html" : relative);
-  const rootResolved = resolve(root) + sep;
-  if (target !== resolve(root) && !target.startsWith(rootResolved)) return null;
+  let decoded = "/";
+  try {
+    decoded = decodeURIComponent(String(urlPath || "/").split("?")[0]);
+  } catch {
+    return null;
+  }
+  if (decoded.includes("\0")) return null;
+  const withoutWeb = decoded.startsWith("/web/") ? `/${decoded.slice(5)}` : decoded;
+  const relative = withoutWeb.replace(/^\/+/, "");
+  const rootResolved = resolve(root);
+  let target = resolve(rootResolved, relative === "" ? "index.html" : relative);
+  if (target !== rootResolved && !target.startsWith(rootResolved + sep)) return null;
 
   if (existsSync(target) && statSync(target).isDirectory()) {
-    target = join(target, "index.html");
-  }
-
-  if (!existsSync(target) && !extname(target)) {
+    const indexed = join(target, "index.html");
+    if (indexed !== rootResolved && !indexed.startsWith(rootResolved + sep)) return null;
+    target = indexed;
+  } else if (!existsSync(target) && !extname(target)) {
     const htmlCandidate = `${target}.html`;
-    if (existsSync(htmlCandidate)) target = htmlCandidate;
+    if (
+      (htmlCandidate === rootResolved || htmlCandidate.startsWith(rootResolved + sep)) &&
+      existsSync(htmlCandidate)
+    ) {
+      target = htmlCandidate;
+    }
   }
 
+  if (target !== rootResolved && !target.startsWith(rootResolved + sep)) return null;
   return target;
 }
 
 const server = createServer((req, res) => {
   const target = resolvePath(req.url || "/");
-
-  if (!target || !existsSync(target)) {
+  const rootResolved = resolve(root);
+  if (
+    !target ||
+    (target !== rootResolved && !target.startsWith(rootResolved + sep)) ||
+    !existsSync(target)
+  ) {
     res.statusCode = 404;
     res.end("Not found");
     return;
