@@ -4,21 +4,21 @@ A **Wordle-style daily word puzzle** for Reddit: guess a Reddit-themed word, unl
 
 > Reddit Daily Games Hackathon 2026 · Play → Guess → Share → Community Clues → Repeat.
 
-## Product screenshots
+## Screenshots
 
-Live UI captured from a local production preview (`npm run build && npm run preview`) of the running game.
+Framed captures of the live app (current UI).
 
-**Home / daily puzzle** — today's card, the free first hint, remaining locked hints, guess input, and the community-clues panel.
+<div align="center">
 
-![Home: daily puzzle board with first hint and guess input](docs/screenshots/01-home.png)
+<img src="docs/screenshots/01-home.webp" alt="Guess today's Reddit word — daily puzzle board" width="720" />
 
-**Hints, guesses, and community clues** — unlocked progressive hints, a recorded wrong guess, and the clue composer.
+<img src="docs/screenshots/02-hints.webp" alt="Unlock hints when stuck — progressive hints and guesses" width="720" />
 
-![Feature: unlocked hints, guess history, and community clue composer](docs/screenshots/02-feature.png)
+<img src="docs/screenshots/03-result.webp" alt="Share your daily score — result modal" width="720" />
 
-**Result modal** — score, streak, emoji grid, and share to Reddit / clipboard / X after a solve.
+<img src="docs/screenshots/04-streak.webp" alt="Keep the streak going — solved puzzle and streak badge" width="720" />
 
-![Result modal after solving the daily puzzle](docs/screenshots/03-result.png)
+</div>
 
 ---
 
