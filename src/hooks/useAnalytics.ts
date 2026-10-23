@@ -96,7 +96,6 @@ export function useAnalytics() {
 
   const eventQueue = useRef<AnalyticsEvent[]>([]);
   const performanceObserver = useRef<PerformanceObserver | null>(null);
-  const errorBoundaryRef = useRef<Error | null>(null);
   const flushTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize analytics system
@@ -128,7 +127,15 @@ export function useAnalytics() {
     const config = localStorage.getItem('threadpulse_analytics_config');
     if (config) {
       try {
-        setAnalyticsConfig({ ...analyticsConfig, ...JSON.parse(config) });
+        const parsed: unknown = JSON.parse(config);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          const record = parsed as Record<string, unknown>;
+          setAnalyticsConfig((current) => ({
+            ...current,
+            enabled: typeof record.enabled === 'boolean' ? record.enabled : current.enabled,
+            debug: typeof record.debug === 'boolean' ? record.debug : current.debug
+          }));
+        }
       } catch (error) {
         console.error('Failed to load analytics config:', error);
       }
@@ -414,9 +421,6 @@ export function useAnalytics() {
       }
     } catch (error) {
       console.error('Failed to flush analytics events:', error);
-
-      // Re-add events to queue for retry
-      eventQueue.current.unshift(...events);
     }
   }, [analyticsConfig, sessionId, userId]);
 
@@ -480,7 +484,7 @@ export function useAnalytics() {
   // Cleanup
   const cleanup = () => {
     if (flushTimeoutRef.current) {
-      clearTimeout(flushTimeoutRef.current);
+      clearInterval(flushTimeoutRef.current);
     }
 
     if (performanceObserver.current) {
@@ -770,19 +774,24 @@ export function useRealTimeMonitoring() {
 
   useEffect(() => {
     const connectWebSocket = () => {
+      const socketUrl = process.env.VITE_MONITORING_WS_URL;
+      if (!socketUrl || !/^wss:\/\//i.test(socketUrl)) return;
+
       try {
-        wsRef.current = new WebSocket(process.env.REACT_APP_MONITORING_WS_URL || 'ws://localhost:8080/monitoring');
+        wsRef.current = new WebSocket(socketUrl);
 
         wsRef.current.onopen = () => {
           setIsConnected(true);
-          console.log('📡 Connected to real-time monitoring');
         };
 
         wsRef.current.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-
-          if (data.type === 'alert') {
-            setAlerts(prev => [...prev, data.alert]);
+          try {
+            const data = JSON.parse(String(event.data)) as { type?: string; alert?: unknown };
+            if (data?.type === 'alert' && data.alert) {
+              setAlerts(prev => [...prev, data.alert]);
+            }
+          } catch (error) {
+            console.error('Ignored malformed monitoring message:', error);
           }
         };
 

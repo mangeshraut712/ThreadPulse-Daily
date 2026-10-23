@@ -1,163 +1,171 @@
-import { Devvit, useState } from '@devvit/public-api';
+/* eslint-disable react-hooks/rules-of-hooks -- Devvit calls hooks from render callbacks, which are not React components. */
+import { Devvit, useAsync, useState } from '@devvit/public-api';
+import {
+    isUtcDayKey,
+    parseBoundedInt,
+    sanitizeRedditUsername,
+    unwrapWebViewMessage,
+    validateClueText,
+    MAX_SCORE,
+} from '../../../src/core/safety';
 
 Devvit.configure({
     redditAPI: true,
     redis: true,
 });
 
-// ─── Custom Post Type ────────────────────────────────────────────
+function utcDayKey(date = new Date()): string {
+    return date.toISOString().slice(0, 10);
+}
+
+type RedditRedisContext = Pick<Devvit.Context, "reddit" | "redis">;
+
+async function moderatorUsername(context: Pick<Devvit.Context, "reddit">): Promise<string | null> {
+    const user = await context.reddit.getCurrentUser();
+    return sanitizeRedditUsername(user?.username ?? null);
+}
+
+async function isModerator(context: Pick<Devvit.Context, "reddit">): Promise<boolean> {
+    const user = await context.reddit.getCurrentUser();
+    if (!user) return false;
+    const subreddit = await context.reddit.getCurrentSubreddit();
+    const permissions = await user.getModPermissionsForSubreddit(subreddit.name);
+    return Array.isArray(permissions) && permissions.length > 0;
+}
+
+async function createDailyPost(context: RedditRedisContext): Promise<boolean> {
+    const subreddit = await context.reddit.getCurrentSubreddit();
+    const dateStr = utcDayKey();
+    if (!isUtcDayKey(dateStr)) return false;
+
+    const lockKey = `daily-post:${subreddit.name}:${dateStr}`;
+    const existing = await context.redis.get(lockKey);
+    if (existing) return false;
+
+    await context.reddit.submitPost({
+        title: `ThreadPulse Daily — ${dateStr}`,
+        subredditName: subreddit.name,
+        preview: (
+            <vstack alignment="center middle" height="100%" gap="medium" backgroundColor="#0B1622">
+                <text size="xxlarge" weight="bold" color="#FFB089">ThreadPulse Daily</text>
+                <text size="medium" color="#C6CAD1">Today's puzzle is ready.</text>
+            </vstack>
+        ),
+    });
+    await context.redis.set(lockKey, '1');
+    return true;
+}
+
 Devvit.addCustomPostType({
     name: 'ThreadPulse Daily',
     description: 'A daily word puzzle game — guess the Reddit-themed word!',
     height: 'tall',
     render: (context) => {
         const [showGame, setShowGame] = useState(false);
-        const [username] = useState(context.userId || 'Redditor');
+        const usernameRequest = useAsync(async () => moderatorUsername(context));
+        const username = usernameRequest.data ?? 'Redditor';
+        const dayKey = utcDayKey();
 
-        // Handle messages from the webview
-        const onWebViewMessage = async (msg: any) => {
-            const { type, data } = msg;
+        const onWebViewMessage = async (msg: { type?: string; data?: Record<string, unknown> }) => {
+            const message = unwrapWebViewMessage(msg);
+            if (!message) return;
+            const player = (await moderatorUsername(context)) ?? 'player';
 
-            switch (type) {
+            switch (message.type) {
                 case 'GAME_COMPLETE': {
-                    if (!data) break;
-                    const { score, streak, dayKey } = data as {
-                        score: number;
-                        streak: number;
-                        dayKey: string;
-                    };
+                    const score = parseBoundedInt(message.data.score, 0, MAX_SCORE);
+                    const streak = parseBoundedInt(message.data.streak, 0, 10000);
+                    const guesses = parseBoundedInt(message.data.guesses, 0, 6);
+                    const reportedDay = message.data.dayKey;
+                    if (score === null || streak === null || guesses === null || !isUtcDayKey(reportedDay)) break;
 
-                    // Save score to leaderboard
-                    await context.redis.zAdd(`leaderboard:${dayKey}`, {
-                        member: String(username),
-                        score: score,
+                    await context.redis.zAdd(`leaderboard:${reportedDay}`, {
+                        member: player,
+                        score,
                     });
                     break;
                 }
-
                 case 'SUBMIT_CLUE': {
-                    if (!data) break;
-                    const { clueText, dayKey } = data as { clueText: string; dayKey: string };
+                    const clue = validateClueText(message.data.clueText);
+                    const reportedDay = message.data.dayKey;
+                    if (!clue.valid || !isUtcDayKey(reportedDay)) break;
 
-                    const clueId = `clue:${dayKey}:${Date.now()}`;
+                    const authorKey = `clue-author:${reportedDay}:${player}`;
+                    const alreadySubmitted = await context.redis.get(authorKey);
+                    if (alreadySubmitted) break;
+
+                    const clueId = `clue:${reportedDay}:${Date.now()}`;
                     await context.redis.hSet(clueId, {
-                        text: String(clueText),
-                        author: String(username),
+                        text: clue.text,
+                        author: player,
                         upvotes: '0',
                     });
+                    await context.redis.zAdd(`clues:${reportedDay}`, {
+                        member: clueId,
+                        score: Date.now(),
+                    });
+                    await context.redis.set(authorKey, clueId);
                     break;
                 }
+                default:
+                    break;
             }
         };
 
         if (!showGame) {
             return (
-                <vstack height="100%" width="100%" alignment="center middle" gap="medium" backgroundColor="#F0F4FF">
-                    <text size="xxlarge" weight="bold" color="#FF4500">
-                        🧩 ThreadPulse Daily
+                <vstack height="100%" width="100%" alignment="center middle" gap="medium" backgroundColor="#0B1622">
+                    <text size="xxlarge" weight="bold" color="#FFB089">
+                        ThreadPulse Daily
                     </text>
-                    <spacer size="medium" />
-                    <button
-                        appearance="primary"
-                        onPress={() => setShowGame(true)}
-                    >
-                        START DAILY PUZZLE
+                    <button appearance="primary" onPress={() => setShowGame(true)}>
+                        Start daily puzzle
                     </button>
-                    <spacer size="large" />
-                    <text size="small" color="#AAAAAA">
+                    <text size="small" color="#C6CAD1">
                         Welcome, {username}
                     </text>
-                    <spacer size="large" />
                 </vstack>
             );
         }
 
-        // Game screen — webview renders the full React game
         return (
             <vstack height="100%" width="100%">
                 <webview
-                    {...({
-                        url: 'index.html',
-                        state: {
-                            username: username,
-                            dayKey: new Date().toISOString().split('T')[0],
-                        },
-                        onMessage: onWebViewMessage,
-                        height: '100%',
-                        width: '100%',
-                    } as any)}
+                    url="index.html"
+                    state={{ username, dayKey }}
+                    onMessage={onWebViewMessage}
+                    height="100%"
+                    width="100%"
                 />
             </vstack>
         );
     },
 });
 
-// ─── Menu Items to Create Game Posts ──────────────────────────────
 Devvit.addMenuItem({
-    label: '🧩 Create ThreadPulse Daily Post',
+    label: 'Create ThreadPulse Daily Post',
     location: 'subreddit',
+    forUserType: 'moderator',
     onPress: async (_event, context) => {
-        const subreddit = await context.reddit.getCurrentSubreddit();
-        const dateStr = new Date().toISOString().split('T')[0];
-
-        await context.reddit.submitPost({
-            title: `🧩 ThreadPulse Daily — ${dateStr}`,
-            subredditName: subreddit.name,
-            preview: (
-                <vstack alignment="center middle" height="100%" gap="medium" backgroundColor="#F0F4FF">
-                    <text size="xxlarge" weight="bold" color="#FF4500">
-                        🧩 ThreadPulse Daily
-                    </text>
-                    <text size="medium" color="#666666">
-                        Loading today's puzzle...
-                    </text>
-                </vstack>
-            ),
-        });
-
+        const created = await createDailyPost(context);
         context.ui.showToast({
-            text: `ThreadPulse Daily post created!`,
-            appearance: 'success',
+            text: created ? 'ThreadPulse Daily post created.' : "Today's post already exists.",
+            appearance: created ? 'success' : 'neutral',
         });
     },
 });
 
-// ─── Automated Post Creation Triggers ────────────────────────────
 Devvit.addTrigger({
     event: 'AppInstall',
     onEvent: async (_event, context) => {
-        const subreddit = await context.reddit.getCurrentSubreddit();
-        const dateStr = new Date().toISOString().split('T')[0];
-
-        await context.reddit.submitPost({
-            title: `🧩 ThreadPulse Daily — ${dateStr}`,
-            subredditName: subreddit.name,
-            preview: (
-                <vstack alignment="center middle" height="100%" gap="medium" backgroundColor="#F0F4FF">
-                    <text size="xxlarge" weight="bold" color="#FF4500">🧩 ThreadPulse Daily</text>
-                    <text size="medium" color="#666666">Creating your puzzle...</text>
-                </vstack>
-            ),
-        });
+        await createDailyPost(context);
     },
 });
 
 Devvit.addTrigger({
     event: 'AppUpgrade',
     onEvent: async (_event, context) => {
-        const subreddit = await context.reddit.getCurrentSubreddit();
-        const dateStr = new Date().toISOString().split('T')[0];
-
-        await context.reddit.submitPost({
-            title: `🧩 ThreadPulse Daily — ${dateStr}`,
-            subredditName: subreddit.name,
-            preview: (
-                <vstack alignment="center middle" height="100%" gap="medium" backgroundColor="#F0F4FF">
-                    <text size="xxlarge" weight="bold" color="#FF4500">🧩 ThreadPulse Daily</text>
-                    <text size="medium" color="#666666">Creating your puzzle...</text>
-                </vstack>
-            ),
-        });
+        await createDailyPost(context);
     },
 });
 
@@ -165,25 +173,9 @@ Devvit.addTrigger({
     event: 'CommentSubmit',
     onEvent: async (event, context) => {
         const body = event.comment?.body?.toLowerCase().trim();
-        if (body === '!create-game') {
-            const subreddit = await context.reddit.getCurrentSubreddit();
-            const dateStr = new Date().toISOString().split('T')[0];
-
-            await context.reddit.submitPost({
-                title: `🧩 ThreadPulse Daily — ${dateStr}`,
-                subredditName: subreddit.name,
-                preview: (
-                    <vstack alignment="center middle" height="100%" gap="medium" backgroundColor="#F0F4FF">
-                        <text size="xxlarge" weight="bold" color="#FF4500">🧩 ThreadPulse Daily</text>
-                        <text size="medium" color="#666666">Creating your puzzle...</text>
-                    </vstack>
-                ),
-            });
-
-            if (event.comment?.id) {
-                await context.reddit.remove(event.comment.id, true);
-            }
-        }
+        if (body !== '!create-game') return;
+        if (!(await isModerator(context))) return;
+        await createDailyPost(context);
     },
 });
 

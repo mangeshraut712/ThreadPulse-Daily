@@ -1,7 +1,8 @@
 import { puzzleBank } from "../data/puzzleBank";
 import { CommunityClue, Puzzle } from "../types";
+import { clueContainsAnswer, normalizeGuess, sanitizePlainText } from "./safety";
 
-const BLOCKED_TERMS = ["http://", "https://", "discord.gg", "t.me/"];
+const BLOCKED_CLUE_PATTERN = /(?:https?:\/\/|javascript:|data:|discord\.gg|t\.me\/)/i;
 
 export interface DailyResult {
     dayKey: string;
@@ -70,7 +71,7 @@ function mulberry32(seed: number) {
 }
 
 function normalizeText(value = "") {
-    return value.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+    return normalizeGuess(value);
 }
 
 export function pickDailyPuzzle(inputDate = new Date(), bank = puzzleBank): DailyResult {
@@ -93,8 +94,10 @@ export function pickDailyPuzzle(inputDate = new Date(), bank = puzzleBank): Dail
 }
 
 export function getHintSet(puzzle: Puzzle, hintsUnlocked = 1): string[] {
-    const hintCount = Math.max(1, Math.min(3, hintsUnlocked));
-    return puzzle.hints.slice(0, hintCount);
+    const hints = Array.isArray(puzzle.hints) ? puzzle.hints : [];
+    const requested = Number.isFinite(hintsUnlocked) ? hintsUnlocked : 1;
+    const hintCount = Math.max(1, Math.min(3, requested));
+    return hints.slice(0, hintCount);
 }
 
 export function evaluateGuess({ guess, answer }: { guess: string; answer: string }): GuessEvaluation {
@@ -110,10 +113,13 @@ export function evaluateGuess({ guess, answer }: { guess: string; answer: string
 export function computeScore({ correct, hintsUsed, timeSeconds, streakDays }: ScoreParams): number {
     if (!correct) return 0;
 
+    const safeHints = Number.isFinite(hintsUsed) ? hintsUsed : 1;
+    const safeTime = Number.isFinite(timeSeconds) ? timeSeconds : 0;
+    const safeStreak = Number.isFinite(streakDays) ? streakDays : 0;
     const baseScore = 100;
-    const hintPenalty = Math.max(0, hintsUsed - 1) * 15;
-    const timePenalty = Math.min(35, Math.floor(Math.max(0, timeSeconds) / 6));
-    const streakBonus = Math.min(25, Math.floor(Math.max(0, streakDays) / 2));
+    const hintPenalty = Math.max(0, safeHints - 1) * 15;
+    const timePenalty = Math.min(35, Math.floor(Math.max(0, safeTime) / 6));
+    const streakBonus = Math.min(25, Math.floor(Math.max(0, safeStreak) / 2));
 
     return Math.max(5, baseScore - hintPenalty - timePenalty + streakBonus);
 }
@@ -126,7 +132,7 @@ export function buildResultComment({ correct, score, answer, dayKey }: { correct
 }
 
 export function validateCommunityClue(text: string, options: CommunityClueOptions = {}): ValidationResult {
-    const raw = String(text || "").trim();
+    const raw = sanitizePlainText(String(text || ""));
 
     if (raw.length < 8) {
         return { valid: false, reason: "Clue must be at least 8 characters." };
@@ -136,18 +142,18 @@ export function validateCommunityClue(text: string, options: CommunityClueOption
         return { valid: false, reason: "Clue must be 180 characters or fewer." };
     }
 
-    const lower = raw.toLowerCase();
-    for (const term of BLOCKED_TERMS) {
-        if (lower.includes(term)) {
-            return { valid: false, reason: "Links are not allowed in clues." };
-        }
+    if (/[<>]/.test(raw)) {
+        return { valid: false, reason: "Clue cannot contain HTML." };
+    }
+
+    if (BLOCKED_CLUE_PATTERN.test(raw)) {
+        return { valid: false, reason: "Links are not allowed in clues." };
     }
 
     const forbiddenWords = Array.isArray(options.forbiddenWords) ? options.forbiddenWords : [];
     const normalizedRaw = normalizeText(raw);
     for (const forbidden of forbiddenWords) {
-        const normalizedForbidden = normalizeText(forbidden);
-        if (normalizedForbidden && normalizedRaw.includes(normalizedForbidden)) {
+        if (clueContainsAnswer(raw, forbidden)) {
             return { valid: false, reason: "Clue cannot contain the answer." };
         }
     }
@@ -161,12 +167,13 @@ export function validateCommunityClue(text: string, options: CommunityClueOption
     return { valid: true, reason: "ok" };
 }
 
-export function rankCommunityClues(clues: CommunityClue[], limit = 5): CommunityClue[] {
+export function rankCommunityClues(clues: CommunityClue[], limit = 5, options: CommunityClueOptions = {}): CommunityClue[] {
     if (!Array.isArray(clues)) return [];
+    const safeLimit = Number.isFinite(limit) ? Math.max(0, Math.floor(limit)) : 5;
 
     return [...clues]
         .filter((item) => item && typeof item.text === "string")
-        .filter((item) => validateCommunityClue(item.text).valid)
+        .filter((item) => validateCommunityClue(item.text, options).valid)
         .sort((a, b) => {
             const scoreA = (a.upvotes || 0) + (a.modBoost || 0) * 3;
             const scoreB = (b.upvotes || 0) + (b.modBoost || 0) * 3;
@@ -175,7 +182,7 @@ export function rankCommunityClues(clues: CommunityClue[], limit = 5): Community
             const dateB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
             return dateB - dateA;
         })
-        .slice(0, limit);
+        .slice(0, safeLimit);
 }
 
 export function createDailyGameSnapshot(inputDate = new Date()): Snapshot {

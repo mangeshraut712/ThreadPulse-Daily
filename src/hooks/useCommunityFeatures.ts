@@ -10,6 +10,7 @@ export interface CommunityFeatures {
   socialSharing: boolean;
   chatSystem: boolean;
   tournaments: boolean;
+  websocketUrl?: string;
 }
 
 export interface SocialStats {
@@ -81,19 +82,26 @@ export function useCommunityFeatures(features: Partial<CommunityFeatures> = {}) 
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const messageHandlerRef = useRef<(data: unknown) => void>(() => undefined);
 
   // Initialize WebSocket connection for real-time features
   useEffect(() => {
+    const socketUrl = features.websocketUrl;
+    if (!socketUrl || !/^wss:\/\//i.test(socketUrl)) return;
+
+    let attempts = 0;
+    let cancelled = false;
     const connectWebSocket = () => {
+      if (cancelled || attempts >= 3) return;
+      attempts += 1;
       try {
-        const wsUrl = process.env.REACT_APP_COMMUNITY_WS_URL || 'ws://localhost:8080/community';
-        wsRef.current = new WebSocket(wsUrl);
+        wsRef.current = new WebSocket(socketUrl);
         
         wsRef.current.onopen = () => {
+          if (cancelled) return;
+          attempts = 0;
           setIsConnected(true);
-          console.log('🌐 Connected to community server');
           
-          // Join community channels
           wsRef.current?.send(JSON.stringify({
             type: 'join',
             channels: ['leaderboard', 'chat', 'tournaments']
@@ -101,15 +109,16 @@ export function useCommunityFeatures(features: Partial<CommunityFeatures> = {}) 
         };
         
         wsRef.current.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          handleWebSocketMessage(data);
+          try {
+            messageHandlerRef.current(JSON.parse(String(event.data)));
+          } catch (error) {
+            console.error('Ignored malformed community message:', error);
+          }
         };
         
         wsRef.current.onclose = () => {
           setIsConnected(false);
-          console.log('🌐 Disconnected from community server');
-          
-          // Attempt reconnection after delay
+          if (cancelled || attempts >= 3) return;
           reconnectTimeoutRef.current = setTimeout(connectWebSocket, 5000);
         };
         
@@ -124,6 +133,7 @@ export function useCommunityFeatures(features: Partial<CommunityFeatures> = {}) 
     connectWebSocket();
 
     return () => {
+      cancelled = true;
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
@@ -131,9 +141,10 @@ export function useCommunityFeatures(features: Partial<CommunityFeatures> = {}) 
         wsRef.current.close();
       }
     };
-  }, []);
+  }, [features.websocketUrl]);
 
   const handleWebSocketMessage = useCallback((data: any) => {
+    if (!data || typeof data !== 'object' || typeof data.type !== 'string') return;
     switch (data.type) {
       case 'leaderboard_update':
         setLeaderboard(data.leaderboard);
@@ -158,8 +169,14 @@ export function useCommunityFeatures(features: Partial<CommunityFeatures> = {}) 
       case 'community_stats':
         setCommunityStats(data.stats);
         break;
+      default:
+        break;
     }
   }, []);
+
+  useEffect(() => {
+    messageHandlerRef.current = handleWebSocketMessage;
+  });
 
   // Submit community clue with AI analysis
   const submitClue = useCallback(async (
@@ -415,9 +432,8 @@ export function useCommunityFeatures(features: Partial<CommunityFeatures> = {}) 
       });
 
       if (response.ok) {
-        const result = await response.json();
-        
-        // Broadcast tournament update
+        await response.json();
+
         wsRef.current?.send(JSON.stringify({
           type: 'tournament_joined',
           tournamentId,
@@ -545,7 +561,10 @@ export function useCommunityFeatures(features: Partial<CommunityFeatures> = {}) 
 
   // Generate unique ID
   const generateId = (): string => {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    return `id-${Date.now()}`;
   };
 
   return {
@@ -675,8 +694,8 @@ export function useSocialSharing() {
 
 // Tournament management utilities
 export function useTournamentManager() {
-  const [activeTournaments, setActiveTournaments] = useState<Tournament[]>([]);
-  const [playerTournaments, setPlayerTournaments] = useState<Tournament[]>([]);
+  const [activeTournaments] = useState<Tournament[]>([]);
+  const [playerTournaments] = useState<Tournament[]>([]);
 
   const createTournament = useCallback(async (
     tournamentData: Omit<Tournament, 'id' | 'participants' | 'currentRound' | 'isActive'>

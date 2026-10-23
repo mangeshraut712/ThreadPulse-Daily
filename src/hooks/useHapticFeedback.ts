@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 export const useHapticFeedback = () => {
   const isSupported = useCallback(() => {
@@ -46,10 +46,10 @@ export const useHapticFeedback = () => {
     }
   }, [isSupported]);
   
-  return {
+  return useMemo(() => ({
     isSupported: isSupported(),
     triggerHaptic,
     triggerCustomPattern,
     stop
-  };
+  }), [isSupported, triggerHaptic, triggerCustomPattern, stop]);
 };

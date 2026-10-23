@@ -9,12 +9,15 @@
     "build": "vite build",
     "build:devvit": "node scripts/build-devvit.mjs",
     "preview": "vite preview",
-    "test": "node scripts/self-test.mjs",
+    "lint": "eslint src apps/devvit/src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:self": "node scripts/self-test.mjs",
     "simulate": "node scripts/simulateGame.mjs",
     "balance": "node scripts/balance-check.mjs",
     "check:submission": "node scripts/submission-check.mjs",
     "verify:final": "node scripts/final-verify.mjs",
-    "qa": "npm run test && npm run balance && npm run check:submission && npm run verify:final"
+    "qa": "npm run typecheck && npm run lint && npm run test && npm run test:self && npm run balance && npm run check:submission && npm run verify:final"
   },
   "dependencies": {
     "@devvit/public-api": "^0.10.21",
@@ -31,15 +34,14 @@
     "@types/prop-types": "^15.7.15",
     "@types/seedrandom": "^3.0.8",
     "@types/semver": "^7.7.1",
-    "comlink": "^4.4.1",
-    "framer-motion": "^10.16.16",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-spring": "^9.7.3",
-    "web-vitals": "^3.5.0",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
     "@types/react": "^18.3.27",
     "@types/react-dom": "^18.3.7",
     "@typescript-eslint/eslint-plugin": "^6.14.0",
@@ -49,6 +51,7 @@
     "eslint": "^8.55.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
+    "jsdom": "^30.1.3",
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.7.3",
@@ -64,7 +67,7 @@
     }
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "keywords": [
     "reddit",

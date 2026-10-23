@@ -18,7 +18,7 @@ export const puzzleBank: Puzzle[] = [
             "It often features strangers helping each other with no strings attached.",
             "Common in communities focused on kindness and uplifting stories."
         ],
-        subredditTags: ["r/HumansBeingBros", "r/wholesomememes"]
+        subredditTags: ["r/HumansBeingBros", "r/MadeMeSmile"]
     },
     {
         id: "p002",
@@ -30,7 +30,7 @@ export const puzzleBank: Puzzle[] = [
             "Comments often include phrases like 'core memory unlocked.'",
             "It connects current users to past eras and shared cultural moments."
         ],
-        subredditTags: ["r/nostalgia", "r/OldSchoolCool"]
+        subredditTags: ["r/OldSchoolCool", "r/TheWayWeWere"]
     },
     {
         id: "p003",
@@ -78,7 +78,7 @@ export const puzzleBank: Puzzle[] = [
             "Players optimize every second and discover tiny time saves.",
             "Communities post records, resets, and breakdown clips."
         ],
-        subredditTags: ["r/speedrun", "r/gaming"]
+        subredditTags: ["r/gaming", "r/Games"]
     },
     {
         id: "p007",
@@ -102,7 +102,7 @@ export const puzzleBank: Puzzle[] = [
             "Commenters physically recoil while still watching to the end.",
             "The emotion mixes discomfort, humor, and disbelief."
         ],
-        subredditTags: ["r/CringePurgatory", "r/PublicFreakout"]
+        subredditTags: ["r/PublicFreakout", "r/facepalm"]
     },
     {
         id: "p009",
@@ -162,7 +162,7 @@ export const puzzleBank: Puzzle[] = [
             "You click a link expecting something else entirely.",
             "The song is catchy. The betrayal is legendary."
         ],
-        subredditTags: ["r/rickroll", "r/memes"]
+        subredditTags: ["r/unexpected", "r/youtubehaiku"]
     },
     {
         id: "p014",
@@ -186,7 +186,7 @@ export const puzzleBank: Puzzle[] = [
             "The original meaning is lost — now it's pure meme fuel.",
             "Navy Seal, gorilla warfare, and tendies are classic examples."
         ],
-        subredditTags: ["r/copypasta", "r/shitposting"]
+        subredditTags: ["r/navyseals", "r/emojipasta"]
     },
     {
         id: "p016",
@@ -234,7 +234,7 @@ export const puzzleBank: Puzzle[] = [
             "It started as a joke and became an unwritten standard.",
             "No ruler needed when you have this fruit for comparison."
         ],
-        subredditTags: ["r/mildlyinteresting", "r/BananasForScale"]
+        subredditTags: ["r/mildlyinteresting", "r/somethingimade"]
     },
     {
         id: "p020",
@@ -270,7 +270,7 @@ export const puzzleBank: Puzzle[] = [
             "Stories range from minor embarrassment to life-altering blunders.",
             "Half the fun is reading comments that say 'this isn't that bad.'"
         ],
-        subredditTags: ["r/tifu", "r/AskReddit"]
+        subredditTags: ["r/confessions", "r/AskReddit"]
     },
     {
         id: "p023",
@@ -318,7 +318,7 @@ export const puzzleBank: Puzzle[] = [
             "The best ones capture a universal feeling in a single frame.",
             "They evolve, get remixed, and eventually die — only to be reborn."
         ],
-        subredditTags: ["r/memes", "r/dankmemes"]
+        subredditTags: ["r/me_irl", "r/AdviceAnimals"]
     },
     {
         id: "p027",
@@ -354,7 +354,7 @@ export const puzzleBank: Puzzle[] = [
             "It celebrates the date your account was created.",
             "Posts mentioning it often receive extra goodwill and upvotes."
         ],
-        subredditTags: ["r/cakeday", "r/memes"]
+        subredditTags: ["r/happy", "r/aww"]
     },
     {
         id: "p030",
@@ -366,7 +366,7 @@ export const puzzleBank: Puzzle[] = [
             "Quality is intentionally low — that's the entire point.",
             "Some communities are dedicated exclusively to this art form."
         ],
-        subredditTags: ["r/shitposting", "r/okbuddyretard"]
+        subredditTags: ["r/comedyheaven", "r/okbuddyretard"]
     },
     {
         id: "p031",
@@ -414,7 +414,7 @@ export const puzzleBank: Puzzle[] = [
             "Some are helpful, some are annoying, some are malicious.",
             "Auto-moderator is the most well-known example on this platform."
         ],
-        subredditTags: ["r/BotDefense", "r/SubSimulatorGPT2"]
+        subredditTags: ["r/TheoryOfReddit", "r/softwaregore"]
     },
     {
         id: "p035",
@@ -426,6 +426,6 @@ export const puzzleBank: Puzzle[] = [
             "Celebrities, scientists, and everyday people have done them.",
             "The most famous one involved a sitting U.S. president."
         ],
-        subredditTags: ["r/AMA", "r/IAmA"]
+        subredditTags: ["r/interviews", "r/AskScience"]
     }
 ];

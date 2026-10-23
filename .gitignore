@@ -3,7 +3,7 @@ node_modules/
 apps/devvit/node_modules/
 
 # Build output
-dist/
+/dist/
 
 # Local cache
 .npm-cache/
@@ -15,14 +15,15 @@ npm-debug.log*
 # Internal Planning
 .internal/
 
-# WASM
-packages/wasm/pkg/
+# WASM build output. The JS fallback is checked in; wasm-pack artifacts are not.
+packages/wasm/pkg/*
+!packages/wasm/pkg/game_engine.js
 package-lock.json.tmp
 # Devvit and Node
 node_modules/
 .npm-cache/
 .devvit/
-dist/
+/dist/
 *.log
 
 # Environment and Secrets

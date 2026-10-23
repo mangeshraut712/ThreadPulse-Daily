@@ -1,19 +1,29 @@
-import { create } from 'zustand';
-import { useState, useCallback } from 'react';
+import { create } from "zustand";
 import {
   pickDailyPuzzle,
   computeScore,
   evaluateGuess,
   validateCommunityClue,
-  rankCommunityClues
-} from '../core/dailyGameEngine';
-
-import type { Player, Puzzle, CommunityClue, DailyGameState, PlayerDailyState, Guess } from '../types';
-
-const STORAGE_KEYS = {
-  streak: "threadpulse.streak",
-  clues: "threadpulse.cluesByDay"
-};
+  rankCommunityClues,
+} from "../core/dailyGameEngine";
+import {
+  activeStreakDays,
+  applyVote,
+  browserStorage,
+  nextStreakRecord,
+  readClues,
+  readProgress,
+  readStreak,
+  readVotes,
+  writeClues,
+  writeProgress,
+  writeStreak,
+  writeVotes,
+  type VoteDirection,
+} from "../core/playerProgress";
+import { MAX_GUESS_LENGTH, normalizeGuess, sanitizePlainText } from "../core/safety";
+import type { CommunityClue, DailyGameState, PlayerDailyState, Puzzle } from "../types";
+import { devvitBridge } from "../utils/devvitBridge";
 
 const MAX_GUESSES = 6;
 
@@ -25,284 +35,293 @@ interface GameStoreResult {
   submitGuess: (guess: string) => Promise<boolean>;
   unlockHint: () => Promise<void>;
   submitClue: (clue: string) => Promise<boolean>;
+  voteClue: (clueId: string, direction: VoteDirection) => void;
 }
 
-function buildInitialPlayerState(): PlayerDailyState {
-  const now = new Date();
+function createId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `clue-${Date.now()}`;
+}
+
+function buildInitialPlayerState(streak: number): PlayerDailyState {
   return {
     guesses: [],
     hintsUnlocked: 1,
     score: 0,
     completed: false,
-    timeStarted: now,
-    streak: 0
+    timeStarted: new Date(),
+    streak,
   };
 }
 
-function buildPuzzleModel(rawPuzzle: any): Puzzle {
-  const now = new Date();
+function buildPuzzleModel(rawPuzzle: {
+  id: string;
+  title: string;
+  answer: string;
+  category: string;
+  hints: string[];
+  subredditTags: string[];
+}): Puzzle {
   return {
     id: String(rawPuzzle.id),
     title: String(rawPuzzle.title),
     answer: String(rawPuzzle.answer),
     category: String(rawPuzzle.category),
-    hints: Array.isArray(rawPuzzle.hints) ? rawPuzzle.hints.map((h: unknown) => String(h)) : [],
+    hints: Array.isArray(rawPuzzle.hints) ? rawPuzzle.hints.map((hint) => String(hint)) : [],
     subredditTags: Array.isArray(rawPuzzle.subredditTags)
-      ? rawPuzzle.subredditTags.map((tag: unknown) => String(tag))
+      ? rawPuzzle.subredditTags.map((tag) => String(tag))
       : [],
     difficulty: 0.5,
-    createdAt: now
+    createdAt: new Date(),
   };
 }
 
-function getStreak(): number {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.streak);
-    if (!raw) return 0;
-    const parsed = JSON.parse(raw);
-    return Number(parsed.streakDays || 0);
-  } catch {
-    return 0;
-  }
+function persistGame(game: DailyGameState): void {
+  const storage = browserStorage();
+  if (!storage) return;
+  writeProgress(storage, game.dayKey, game.playerState);
+  writeClues(storage, game.dayKey, game.communityClues);
+  writeVotes(storage, game.dayKey, game.viewerVotes ?? {});
 }
 
-function getStreakState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.streak);
-    if (!raw) return { lastSolvedDay: null as string | null, streakDays: 0 };
-    const parsed = JSON.parse(raw);
-    return {
-      lastSolvedDay: typeof parsed.lastSolvedDay === "string" ? parsed.lastSolvedDay : null,
-      streakDays: Number(parsed.streakDays || 0)
-    };
-  } catch {
-    return { lastSolvedDay: null as string | null, streakDays: 0 };
-  }
-}
-
-function toUtcDayKey(inputDate = new Date()) {
-  const d = new Date(inputDate);
-  const year = d.getUTCFullYear();
-  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(d.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function shiftUtcDay(dayKey: string, days: number): string {
-  const d = new Date(`${dayKey}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return toUtcDayKey(d);
-}
-
-function updateStreak(dayKey: string): number {
-  const streak = getStreakState();
-  if (streak.lastSolvedDay === dayKey) return streak.streakDays;
-
-  const yesterday = shiftUtcDay(dayKey, -1);
-  const next = {
-    lastSolvedDay: dayKey,
-    streakDays: streak.lastSolvedDay === yesterday ? streak.streakDays + 1 : 1
-  };
-
-  try {
-    localStorage.setItem(STORAGE_KEYS.streak, JSON.stringify(next));
-  } catch {
-    // Non-blocking: gameplay should continue even if persistence fails.
-  }
-
+function commitSolvedStreak(dayKey: string): number {
+  const storage = browserStorage();
+  if (!storage) return 1;
+  const next = nextStreakRecord(readStreak(storage), dayKey);
+  writeStreak(storage, next);
   return next.streakDays;
 }
 
-function getStoredClues(dayKey: string): CommunityClue[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.clues);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    const clues = parsed?.[dayKey];
-    return Array.isArray(clues) ? clues : [];
-  } catch {
-    return [];
-  }
-}
+export const useGameStore = create<GameStoreResult>((set, get) => ({
+  currentGame: null,
+  isLoading: true,
+  error: null,
 
-function saveStoredClues(dayKey: string, clues: CommunityClue[]) {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.clues);
-    const parsed = raw ? JSON.parse(raw) : {};
-    parsed[dayKey] = clues;
-    localStorage.setItem(STORAGE_KEYS.clues, JSON.stringify(parsed));
-  } catch {
-    // Non-blocking: clue persistence errors should not block gameplay.
-  }
-}
-
-export function useGameStore(): GameStoreResult {
-  const [currentGame, setCurrentGame] = useState<DailyGameState | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const refreshGame = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  refreshGame: async () => {
+    set({ isLoading: true, error: null });
 
     try {
-      const daily = pickDailyPuzzle(new Date());
-      const nextGame: DailyGameState = {
-        dayKey: String(daily.dayKey),
-        puzzle: buildPuzzleModel(daily.puzzle),
-        playerState: {
-          ...buildInitialPlayerState(),
-          streak: getStreak()
+      const now = new Date();
+      const daily = pickDailyPuzzle(now);
+      const dayKey = String(daily.dayKey);
+      const storage = browserStorage();
+      const streak = storage ? activeStreakDays(readStreak(storage), dayKey) : 0;
+      const storedProgress = storage ? readProgress(storage, dayKey, streak) : null;
+      const playerState = storedProgress
+        ? { ...storedProgress, streak: storedProgress.completed ? Math.max(storedProgress.streak, streak) : streak }
+        : buildInitialPlayerState(streak);
+
+      set({
+        isLoading: false,
+        currentGame: {
+          dayKey,
+          puzzle: buildPuzzleModel(daily.puzzle),
+          playerState,
+          communityClues: storage ? readClues(storage, dayKey) : [],
+          viewerVotes: storage ? readVotes(storage, dayKey) : {},
+          leaderboard: [],
+          timestamp: now,
         },
-        communityClues: getStoredClues(String(daily.dayKey)),
-        leaderboard: [],
-        timestamp: new Date()
-      };
-
-      setCurrentGame(nextGame);
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to initialize daily game.");
-    } finally {
-      setIsLoading(false);
+      set({
+        isLoading: false,
+        error: err instanceof Error ? err.message : "Failed to initialize daily game.",
+      });
     }
-  }, []);
+  },
 
-  const submitGuess = useCallback(
-    async (guess: string) => {
-      if (!currentGame || currentGame.playerState.completed) return false;
+  submitGuess: async (guess: string) => {
+    const trimmed = guess.trim();
+    const normalized = normalizeGuess(trimmed);
+    if (!normalized || trimmed.length > MAX_GUESS_LENGTH) {
+      set({ error: "Enter a guess using letters or numbers (32 characters max)." });
+      return false;
+    }
 
-      if (currentGame.playerState.guesses.length >= MAX_GUESSES) {
-        setError("No guesses remaining for today.");
-        return false;
+    let applied = false;
+    let solved = false;
+    let dayKey = "";
+
+    set((state) => {
+      const game = state.currentGame;
+      if (!game || game.playerState.completed) return state;
+      if (game.playerState.guesses.length >= MAX_GUESSES) {
+        return { error: "No guesses remaining for today." };
       }
 
-      const normalizedGuess = guess.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
-      const alreadyTried = currentGame.playerState.guesses.some(
-        (item: { text: string }) => item.text.toLowerCase().replace(/[^a-z0-9]/g, "").trim() === normalizedGuess
-      );
-      if (alreadyTried) {
-        setError("You already tried that guess.");
-        return false;
+      const duplicate = game.playerState.guesses.some((item) => normalizeGuess(item.text) === normalized);
+      if (duplicate) {
+        return { error: "You already tried that guess." };
       }
 
       const evaluation = evaluateGuess({
-        guess,
-        answer: currentGame.puzzle.answer
+        guess: trimmed,
+        answer: game.puzzle.answer,
       });
-
-      const startedAt = new Date(currentGame.playerState.timeStarted);
-      const timeSeconds = Number.isNaN(startedAt.getTime()) ? 0 : Math.max(1, Math.round((Date.now() - startedAt.getTime()) / 1000));
-
+      const startedAt = new Date(game.playerState.timeStarted);
+      const elapsed = Number.isNaN(startedAt.getTime())
+        ? 0
+        : Math.max(0, Math.round((Date.now() - startedAt.getTime()) / 1000));
       const nextScore = computeScore({
         correct: evaluation.correct,
-        hintsUsed: currentGame.playerState.hintsUnlocked,
-        timeSeconds,
-        streakDays: currentGame.playerState.streak
+        hintsUsed: game.playerState.hintsUnlocked,
+        timeSeconds: elapsed,
+        streakDays: game.playerState.streak,
       });
-
-      const newGuess = {
-        text: guess,
-        timestamp: new Date(),
-        hintsUsed: currentGame.playerState.hintsUnlocked,
-        correct: evaluation.correct
-      };
-
-      const nextStreak = evaluation.correct ? updateStreak(currentGame.dayKey) : currentGame.playerState.streak;
-
-      setCurrentGame({
-        ...currentGame,
-        playerState: {
-          ...currentGame.playerState,
-          guesses: [...currentGame.playerState.guesses, newGuess],
-          completed: evaluation.correct,
-          score: nextScore,
-          streak: nextStreak,
-          timeCompleted: evaluation.correct ? new Date() : currentGame.playerState.timeCompleted
-        }
-      });
-      if (evaluation.correct) {
-        setError(null);
-      } else if (currentGame.playerState.guesses.length + 1 >= MAX_GUESSES) {
-        setError("Round complete. Try again on the next daily puzzle.");
-      } else {
-        setError(`Not correct yet. ${MAX_GUESSES - (currentGame.playerState.guesses.length + 1)} guesses left.`);
-      }
-
-      return evaluation.correct;
-    },
-    [currentGame]
-  );
-
-  const unlockHint = useCallback(async () => {
-    if (!currentGame || currentGame.playerState.completed) return;
-
-    const nextHints = Math.min(3, currentGame.playerState.hintsUnlocked + 1);
-    if (nextHints === currentGame.playerState.hintsUnlocked) return;
-
-    setCurrentGame({
-      ...currentGame,
-      playerState: {
-        ...currentGame.playerState,
-        hintsUnlocked: nextHints
-      }
-    });
-  }, [currentGame]);
-
-  const submitClue = useCallback(
-    async (clue: string) => {
-      if (!currentGame) return false;
-
-      if (currentGame.communityClues.some((item: CommunityClue) => item.author === "local-player")) {
-        setError("You already submitted a clue for today.");
-        return false;
-      }
-
-      const validation = validateCommunityClue(clue, {
-        forbiddenWords: [currentGame.puzzle.answer],
-        existingClues: currentGame.communityClues.map((item: CommunityClue) => item.text)
-      });
-      if (!validation.valid) {
-        setError(validation.reason || "Invalid clue.");
-        return false;
-      }
-
-      const nextClue: CommunityClue = {
-        id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-        text: clue.trim(),
-        author: "local-player",
-        upvotes: 1,
-        modBoost: 0,
-        aiAnalysis: {
-          sentiment: 0,
-          creativity: 0.5,
-          difficulty: 0.5,
-          engagement_prediction: 0.5,
-          toxicity_score: 0,
-          quality_score: 0.5
+      const guesses = [
+        ...game.playerState.guesses,
+        {
+          text: trimmed,
+          timestamp: new Date(),
+          hintsUsed: game.playerState.hintsUnlocked,
+          correct: evaluation.correct,
         },
-        approved: true,
-        createdAt: new Date()
+      ];
+      const guessesLeft = MAX_GUESSES - guesses.length;
+      applied = true;
+      solved = evaluation.correct;
+      dayKey = game.dayKey;
+
+      return {
+        error: evaluation.correct
+          ? null
+          : guessesLeft <= 0
+            ? "Round complete. Try again on the next daily puzzle."
+            : `Not correct yet. ${guessesLeft} ${guessesLeft === 1 ? "guess" : "guesses"} left.`,
+        currentGame: {
+          ...game,
+          playerState: {
+            ...game.playerState,
+            guesses,
+            completed: evaluation.correct,
+            score: evaluation.correct ? nextScore : 0,
+            timeCompleted: evaluation.correct ? new Date() : game.playerState.timeCompleted,
+          },
+        },
       };
+    });
 
-      const ranked = rankCommunityClues([...currentGame.communityClues, nextClue], 5);
-      saveStoredClues(currentGame.dayKey, ranked);
-      setCurrentGame({
-        ...currentGame,
-        communityClues: ranked
+    if (!applied) return false;
+
+    if (solved) {
+      const streak = commitSolvedStreak(dayKey);
+      set((state) => {
+        if (!state.currentGame || state.currentGame.dayKey !== dayKey) return state;
+        return {
+          currentGame: {
+            ...state.currentGame,
+            playerState: { ...state.currentGame.playerState, streak },
+          },
+        };
       });
-      setError(null);
-      return true;
-    },
-    [currentGame]
-  );
+    }
 
-  return {
-    currentGame,
-    isLoading,
-    error,
-    refreshGame,
-    submitGuess,
-    unlockHint,
-    submitClue
-  };
-}
+    const latest = get().currentGame;
+    if (latest) persistGame(latest);
+    return solved;
+  },
+
+  unlockHint: async () => {
+    let changed = false;
+    set((state) => {
+      const game = state.currentGame;
+      if (!game || game.playerState.completed || game.playerState.guesses.length >= MAX_GUESSES) return state;
+      const nextHints = Math.min(3, game.playerState.hintsUnlocked + 1);
+      if (nextHints === game.playerState.hintsUnlocked) return state;
+      changed = true;
+      return {
+        currentGame: {
+          ...game,
+          playerState: { ...game.playerState, hintsUnlocked: nextHints },
+        },
+      };
+    });
+    if (!changed) return;
+    const latest = get().currentGame;
+    if (latest) persistGame(latest);
+  },
+
+  submitClue: async (clue: string) => {
+    const game = get().currentGame;
+    if (!game) return false;
+
+    const validation = validateCommunityClue(clue, {
+      forbiddenWords: [game.puzzle.answer],
+      existingClues: game.communityClues.map((item) => item.text),
+    });
+    if (!validation.valid) {
+      set({ error: validation.reason || "Invalid clue." });
+      return false;
+    }
+
+    const nextClue: CommunityClue = {
+      id: createId(),
+      text: sanitizePlainText(clue),
+      author: "local-player",
+      upvotes: 1,
+      modBoost: 0,
+      aiAnalysis: {
+        sentiment: 0,
+        creativity: 0.5,
+        difficulty: 0.5,
+        engagement_prediction: 0.5,
+        toxicity_score: 0,
+        quality_score: 0.5,
+      },
+      approved: true,
+      createdAt: new Date(),
+    };
+
+    let accepted = false;
+    set((state) => {
+      const current = state.currentGame;
+      if (!current) return state;
+      if (current.communityClues.some((item) => item.author === "local-player")) {
+        return { error: "You already submitted a clue for today." };
+      }
+      accepted = true;
+      return {
+        error: null,
+        currentGame: {
+          ...current,
+          communityClues: rankCommunityClues([...current.communityClues, nextClue], 5, {
+            forbiddenWords: [current.puzzle.answer],
+          }),
+        },
+      };
+    });
+
+    if (!accepted) return false;
+    const latest = get().currentGame;
+    if (latest) {
+      persistGame(latest);
+      devvitBridge.submitClue(nextClue.text, latest.dayKey);
+    }
+    return true;
+  },
+
+  voteClue: (clueId, direction) => {
+    const game = get().currentGame;
+    if (!game) return;
+    const target = game.communityClues.find((clue) => clue.id === clueId);
+    if (!target) return;
+
+    const previous = game.viewerVotes?.[clueId] ?? null;
+    const voted = applyVote(target.upvotes, previous, direction);
+    const viewerVotes = { ...(game.viewerVotes ?? {}) };
+    if (voted.vote) viewerVotes[clueId] = voted.vote;
+    else delete viewerVotes[clueId];
+
+    const communityClues = rankCommunityClues(
+      game.communityClues.map((clue) => (clue.id === clueId ? { ...clue, upvotes: voted.upvotes } : clue)),
+      5,
+      { forbiddenWords: [game.puzzle.answer] }
+    );
+    const nextGame: DailyGameState = { ...game, communityClues, viewerVotes };
+    set({ currentGame: nextGame });
+    persistGame(nextGame);
+  },
+}));

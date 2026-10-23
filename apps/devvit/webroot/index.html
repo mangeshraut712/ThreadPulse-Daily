@@ -63,6 +63,10 @@
         background: #0B1622 !important;
       }
 
+      .loading-subtitle {
+        color: #C6CAD1 !important;
+      }
+
       .loading-bar-track {
         background: #1E2D3F !important;
       }
@@ -110,7 +114,7 @@
 
     .loading-subtitle {
       font-size: .8rem;
-      color: #8A8D91;
+      color: #4B5563;
       font-weight: 500;
     }
 
@@ -127,6 +131,13 @@
       background: linear-gradient(90deg, #FF4500, #FFB800);
       border-radius: 99px;
       animation: loading-anim 1.5s ease-in-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .loading-bar-fill {
+        animation: none;
+        width: 40%;
+      }
     }
 
     @keyframes loading-anim {
@@ -146,15 +157,15 @@
       }
     }
   </style>
-  <script type="module" crossorigin src="/assets/js/index-BKb30TuP.js"></script>
-  <link rel="modulepreload" crossorigin href="/assets/js/vendor-DDxydHEc.js">
-  <link rel="modulepreload" crossorigin href="/assets/js/animation-BXzQqAVY.js">
-  <link rel="stylesheet" crossorigin href="/assets/css/index-soM1mGWv.css">
-<script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+  <script type="module" crossorigin src="/assets/js/index-BjFr1wwa.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/js/ui-BI3INOTA.js">
+  <link rel="modulepreload" crossorigin href="/assets/js/vendor-Bvv_SIb9.js">
+  <link rel="stylesheet" crossorigin href="/assets/css/index-CXyIvMJU.css">
+</head>
 
 <body>
   <!-- Loading Screen (hidden by React when ready) -->
-  <div id="loading-screen">
+  <div id="loading-screen" role="status" aria-live="polite">
     <div class="loading-brand">
       <div class="loading-brand-icon">🧩</div>
       <span class="loading-brand-text">ThreadPulse Daily</span>
