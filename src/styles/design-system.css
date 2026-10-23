@@ -31,18 +31,23 @@
   --surface-2: #F0F2F5;
   --surface-3: #E4E6EB;
   --text-primary: #1A1A2E;
-  --text-secondary: #65676B;
-  --text-tertiary: #8A8D91;
+  --text-secondary: #4B5160;
+  --text-tertiary: #4B5563;
+  --link: #005FA3;
+  --score-text: #7A4E00;
+  --focus-ring: #9A2800;
+  --button-primary: #C2410C;
+  --button-primary-hover: #9A3412;
   --border-light: rgba(0, 0, 0, .08);
   --border-medium: rgba(0, 0, 0, .15);
 
   /* Semantic */
-  --success: #46D369;
-  --success-bg: rgba(70, 211, 105, .12);
-  --warning: #FFB800;
-  --warning-bg: rgba(255, 184, 0, .12);
-  --error: #EA0027;
-  --error-bg: rgba(234, 0, 39, .1);
+  --success: #0E7A34;
+  --success-bg: rgba(14, 122, 52, .12);
+  --warning: #8A5A00;
+  --warning-bg: rgba(138, 90, 0, .12);
+  --error: #C40020;
+  --error-bg: rgba(196, 0, 32, .1);
   --info: #0079D3;
 
   /* Glassmorphism */
@@ -109,8 +114,15 @@
     --surface-2: #172536;
     --surface-3: #1E2D3F;
     --text-primary: #F0F2F5;
-    --text-secondary: #B0B3B8;
-    --text-tertiary: #8A8D91;
+    --text-secondary: #D5D8DE;
+    --text-tertiary: #C6CAD1;
+    --link: #8CC8FF;
+    --score-text: #FFD56A;
+    --focus-ring: #FFB089;
+    --success: #5DDB8A;
+    --success-bg: rgba(93, 219, 138, .16);
+    --error: #FF8B96;
+    --error-bg: rgba(255, 139, 150, .16);
     --border-light: rgba(255, 255, 255, .08);
     --border-medium: rgba(255, 255, 255, .15);
     --glass-bg: rgba(11, 22, 34, 0.8);
@@ -451,14 +463,22 @@ body {
 }
 
 .hint-locked {
-  opacity: .4;
   border-left-color: var(--border-medium);
-  cursor: pointer;
 }
 
-.hint-locked .hint-text {
-  filter: blur(6px);
-  user-select: none;
+.hint-unlock {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 /* ─── Guess Tiles ──────────────────────────────────────────── */
@@ -601,13 +621,14 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--reddit-orange), var(--reddit-orange-dark));
-  color: white;
-  box-shadow: 0 2px 8px rgba(255, 69, 0, .3);
+  background: var(--button-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(154, 52, 18, .28);
 }
 
 .btn-primary:hover:not(:disabled) {
-  box-shadow: 0 4px 16px rgba(255, 69, 0, .4);
+  background: var(--button-primary-hover);
+  box-shadow: 0 4px 16px rgba(154, 52, 18, .34);
   transform: translateY(-1px);
 }
 
@@ -692,10 +713,7 @@ body {
 .score-value {
   font-family: var(--font-mono);
   font-size: var(--text-2xl);
-  background: linear-gradient(135deg, var(--accent-gold), #FF8C00);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--score-text);
 }
 
 /* ─── Community Clues ──────────────────────────────────────── */
@@ -724,17 +742,23 @@ body {
 }
 
 .clue-vote-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--text-tertiary);
-  font-size: .7rem;
-  padding: 2px;
+  color: var(--text-secondary);
+  font-size: .85rem;
+  padding: 0;
   transition: color var(--duration-fast);
 }
 
-.clue-vote-btn:hover {
-  color: var(--reddit-orange);
+.clue-vote-btn:hover,
+.clue-vote-btn[aria-pressed="true"] {
+  color: var(--button-primary);
 }
 
 .clue-vote-count {
@@ -892,8 +916,8 @@ body {
 }
 
 .share-btn-reddit {
-  background: var(--reddit-orange);
-  color: white;
+  background: var(--button-primary);
+  color: #fff;
   grid-column: 1 / -1;
 }
 
@@ -903,8 +927,8 @@ body {
 }
 
 .share-btn-twitter {
-  background: #1DA1F2;
-  color: white;
+  background: #0B6E99;
+  color: #fff;
 }
 
 /* ─── Loading ──────────────────────────────────────────────── */
@@ -1092,8 +1116,9 @@ body {
 }
 
 .footer-link {
-  color: var(--text-tertiary);
-  text-decoration: none;
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
   transition: color var(--duration-fast);
 }
 
@@ -1147,8 +1172,65 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--reddit-orange);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--sp-4);
+  top: var(--sp-4);
+  transform: translateY(-150%);
+  z-index: 2000;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--focus-ring);
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 70vh;
+  flex-direction: column;
+  gap: var(--sp-4);
+  color: var(--text-secondary);
+}
+
+.field-error,
+.field-hint,
+.empty-copy {
+  margin-top: var(--sp-3);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.field-error {
+  color: var(--error);
+}
+
+.emoji-grid {
+  font-size: 1.5rem;
+  letter-spacing: 4px;
+  margin: var(--sp-4) 0;
 }
 
 /* ─── High Contrast ────────────────────────────────────────── */
@@ -1258,7 +1340,7 @@ body {
   border-radius: var(--radius-full);
   font-size: var(--text-xs);
   font-weight: 500;
-  color: var(--reddit-blue);
+  color: var(--link);
   text-decoration: none;
 }
 

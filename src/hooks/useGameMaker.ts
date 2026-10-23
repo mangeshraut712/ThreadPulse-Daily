@@ -28,14 +28,12 @@ export function useGameMaker() {
 
   // Initialize GameMaker runtime
   const initialize = useCallback(async () => {
-    try {
-      // In a real implementation, we would load the GameMaker WASM runtime here
-      // For now, we'll use CSS-based animations as a fallback
-      setIsReady(true);
-    } catch (error) {
-      console.warn('GameMaker initialization failed, using fallback animations');
-      setIsReady(true); // Still set ready for CSS fallback
+    const reducedMotion = typeof window !== "undefined"
+      && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) {
+      setConfig((prev) => ({ ...prev, reducedMotion: true, particleEffects: false }));
     }
+    setIsReady(true);
   }, []);
 
   // Trigger a CSS-based animation

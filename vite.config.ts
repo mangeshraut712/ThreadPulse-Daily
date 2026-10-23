@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
@@ -20,6 +20,7 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'public',
       filename: 'sw.js',
+      injectRegister: false,
       injectManifest: {
         injectionPoint: undefined
       }
@@ -41,11 +42,12 @@ export default defineConfig({
   },
   server: {
     port: 4173,
-    host: true,
-    headers: {
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin'
-    }
+    host: true
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
+    css: true
   },
   build: {
     target: 'esnext',
@@ -55,8 +57,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          ai: ['@tensorflow/tfjs'],
-          animation: ['framer-motion', 'react-spring'],
           ui: ['zustand']
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',

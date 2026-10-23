@@ -54,10 +54,9 @@ export function useAIAdaptive() {
   const [isModelReady, setIsModelReady] = useState(false);
   const modelRef = useRef(AIModel);
 
-  // Initialize TensorFlow.js models
-  useEffect(() => {
-    const initializeModels = async () => {
-      try {
+  const initializeModels = useCallback(async () => {
+    if (modelRef.current.isInitialized) return;
+    try {
         await tf.ready();
         
         // Initialize Difficulty Prediction Model
@@ -124,11 +123,22 @@ export function useAIAdaptive() {
         console.log('🤖 AI Models initialized successfully');
         
       } catch (error) {
-        console.error('❌ Failed to initialize AI models:', error);
+        console.error('Failed to initialize AI models:', error);
       }
-    };
+  }, []);
 
-    initializeModels();
+  useEffect(() => {
+    return () => {
+      modelRef.current.difficultyModel?.dispose();
+      modelRef.current.engagementModel?.dispose();
+      modelRef.current.contentModel?.dispose();
+      modelRef.current = {
+        difficultyModel: null,
+        engagementModel: null,
+        contentModel: null,
+        isInitialized: false
+      };
+    };
   }, []);
 
   // Enhanced personalized hint generation
@@ -138,6 +148,9 @@ export function useAIAdaptive() {
     player?: Player
   ): Promise<string[]> => {
     const baseHints = puzzle.hints.slice(0, Math.max(1, Math.min(3, hintsUnlocked)));
+    if (!modelRef.current.isInitialized) {
+      void initializeModels();
+    }
     
     if (!modelRef.current.isInitialized || !player) {
       return baseHints;
@@ -155,7 +168,7 @@ export function useAIAdaptive() {
       console.error('Error generating personalized hints:', error);
       return baseHints;
     }
-  }, []);
+  }, [initializeModels]);
 
   // Generate contextual hints using AI
   const generateContextualHints = async (
@@ -171,7 +184,7 @@ export function useAIAdaptive() {
     }
     
     // Subreddit-specific hint
-    if (currentHints === 2) {
+    if (currentHints === 2 && puzzle.subredditTags[0]) {
       hints.push(`Popular in ${puzzle.subredditTags[0]} communities where you're active.`);
     }
     
@@ -223,6 +236,26 @@ export function useAIAdaptive() {
     player: Player,
     recentGames: GameHistory[]
   ): AIAdaptiveDifficulty => {
+    if (!modelRef.current.isInitialized) {
+      void initializeModels();
+    }
+    if (recentGames.length === 0) {
+      return {
+        currentLevel: Math.max(0.1, Math.min(1, player.profile.skillLevel || 0.5)),
+        targetSuccessRate: 0.62,
+        adjustmentFactor: 0.05,
+        nextAdjustment: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        confidence: 0.5,
+        factors: {
+          skillLevel: player.profile.skillLevel,
+          recentPerformance: 0,
+          timeOfDay: new Date().getHours() / 24,
+          dayOfWeek: new Date().getDay() / 7,
+          streakMomentum: Math.min(1, player.stats.currentStreak / 10)
+        }
+      };
+    }
+
     const winRate = recentGames.filter(g => g.completed).length / recentGames.length;
     const avgTime = recentGames.reduce((sum, g) => sum + g.timeTaken, 0) / recentGames.length;
     const avgHints = recentGames.reduce((sum, g) => sum + g.hintsUsed, 0) / recentGames.length;
@@ -296,7 +329,7 @@ export function useAIAdaptive() {
         streakMomentum
       }
     };
-  }, []);
+  }, [initializeModels]);
 
   // Generate personalized insights
   const generatePersonalizedInsights = useCallback((
@@ -346,9 +379,11 @@ export function useAIAdaptive() {
     gameHistory: GameHistory[]
   ): number => {
     if (!modelRef.current.engagementModel || !modelRef.current.isInitialized) {
-      // Fallback calculation
+      void initializeModels();
       const recentActivity = gameHistory.slice(-7).length;
-      const avgScore = gameHistory.reduce((sum, g) => sum + (g.completed ? 1 : 0), 0) / gameHistory.length;
+      const avgScore = gameHistory.length === 0
+        ? 0
+        : gameHistory.reduce((sum, g) => sum + (g.completed ? 1 : 0), 0) / gameHistory.length;
       return Math.min(1, (recentActivity / 7 + avgScore) / 2);
     }
     
@@ -366,7 +401,7 @@ export function useAIAdaptive() {
       console.error('Engagement prediction failed:', error);
       return 0.5;
     }
-  }, []);
+  }, [initializeModels]);
 
   // Prepare features for engagement model
   const prepareEngagementFeatures = (
@@ -374,13 +409,14 @@ export function useAIAdaptive() {
     gameHistory: GameHistory[]
   ): number[] => {
     const recentGames = gameHistory.slice(-30);
-    const dailyFrequency = recentGames.length / 30;
-    const avgSessionTime = recentGames.reduce((sum, g) => sum + g.timeTaken, 0) / recentGames.length;
+    const sample = recentGames.length;
+    const dailyFrequency = sample / 30;
+    const avgSessionTime = sample === 0 ? 0 : recentGames.reduce((sum, g) => sum + g.timeTaken, 0) / sample;
     const streakLength = player.stats.currentStreak;
     const totalGames = player.stats.totalGames;
     const winRate = player.stats.winRate;
     const skillLevel = player.profile.skillLevel;
-    const hintsPerGame = recentGames.reduce((sum, g) => sum + g.hintsUsed, 0) / recentGames.length;
+    const hintsPerGame = sample === 0 ? 0 : recentGames.reduce((sum, g) => sum + g.hintsUsed, 0) / sample;
     const timeOfDay = new Date().getHours() / 24;
     const dayOfWeek = new Date().getDay() / 7;
     const lastPlayed = gameHistory.length > 0 ? 

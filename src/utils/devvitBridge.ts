@@ -1,99 +1,102 @@
 /**
- * Devvit Message Bridge
+ * Devvit message bridge.
  *
- * Handles bidirectional communication between the webview game
- * and the Devvit host (Reddit app). Falls back gracefully when
- * running outside of Reddit (e.g., local dev server).
+ * Sends gameplay events to a trusted Reddit parent frame and ignores
+ * messages from any other origin. Outside Reddit, calls are no-ops.
  */
 
+import { isUtcDayKey, MAX_SCORE, parseBoundedInt, validateClueText } from "../core/safety";
+import { isTrustedMessageOrigin, trustedParentOrigin } from "./messageOrigin";
+
 type DevvitMessage = {
-    type: string;
-    data?: Record<string, unknown>;
+  type: string;
+  data?: Record<string, unknown>;
 };
 
 type MessageHandler = (msg: DevvitMessage) => void;
 
 class DevvitBridge {
-    private handlers: Map<string, MessageHandler[]> = new Map();
-    private isDevvit: boolean;
+  private handlers: Map<string, MessageHandler[]> = new Map();
+  private isDevvit: boolean;
 
-    constructor() {
-        // Detect if we're running inside a Devvit webview
-        this.isDevvit = window.parent !== window;
+  constructor() {
+    this.isDevvit = typeof window !== "undefined" && window.parent !== window;
+    if (!this.isDevvit || typeof window === "undefined") return;
 
-        if (this.isDevvit) {
-            window.addEventListener('message', (event) => {
-                try {
-                    const msg = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-                    if (msg?.type) {
-                        this.emit(msg.type, msg);
-                    }
-                } catch {
-                    // Ignore non-JSON messages
-                }
-            });
-        }
-    }
+    window.addEventListener("message", (event: MessageEvent) => {
+      if (!isTrustedMessageOrigin(event.origin)) return;
+      try {
+        const payload: unknown = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        if (!payload || typeof payload !== "object") return;
+        const message = payload as DevvitMessage;
+        if (typeof message.type !== "string" || !/^[A-Za-z0-9_-]{1,40}$/.test(message.type)) return;
+        this.emit(message.type, message);
+      } catch {
+        // Ignore malformed messages.
+      }
+    });
+  }
 
-    /** Send a message to the Devvit host */
-    postMessage(type: string, data?: Record<string, unknown>) {
-        if (!this.isDevvit) {
-            console.log('[DevvitBridge] (local mode) →', type, data);
-            return;
-        }
+  postMessage(type: string, data?: Record<string, unknown>) {
+    if (!this.isDevvit || typeof window === "undefined") return;
+    const origin = trustedParentOrigin();
+    if (!origin) return;
 
-        window.parent.postMessage(
-            { type: 'devvit-message', data: { message: { type, data } } },
-            '*'
-        );
-    }
+    window.parent.postMessage(
+      { type: "devvit-message", data: { message: { type, data } } },
+      origin
+    );
+  }
 
-    /** Listen for messages from Devvit host */
-    on(type: string, handler: MessageHandler) {
-        if (!this.handlers.has(type)) {
-            this.handlers.set(type, []);
-        }
-        this.handlers.get(type)!.push(handler);
-    }
+  on(type: string, handler: MessageHandler) {
+    const list = this.handlers.get(type) ?? [];
+    list.push(handler);
+    this.handlers.set(type, list);
+  }
 
-    /** Remove a listener */
-    off(type: string, handler: MessageHandler) {
-        const list = this.handlers.get(type);
-        if (list) {
-            this.handlers.set(type, list.filter(h => h !== handler));
-        }
-    }
+  off(type: string, handler: MessageHandler) {
+    const list = this.handlers.get(type);
+    if (!list) return;
+    this.handlers.set(
+      type,
+      list.filter((item) => item !== handler)
+    );
+  }
 
-    private emit(type: string, msg: DevvitMessage) {
-        const list = this.handlers.get(type);
-        if (list) {
-            list.forEach(h => h(msg));
-        }
-    }
+  private emit(type: string, msg: DevvitMessage) {
+    for (const handler of this.handlers.get(type) ?? []) handler(msg);
+  }
 
-    /** Check if running inside Devvit */
-    get isInsideReddit(): boolean {
-        return this.isDevvit;
-    }
+  get isInsideReddit(): boolean {
+    return this.isDevvit;
+  }
 
-    /** Send game completion data to Devvit for leaderboard storage */
-    reportGameComplete(score: number, guesses: number, streak: number) {
-        const dayKey = new Date().toISOString().split('T')[0];
-        this.postMessage('GAME_COMPLETE', { score, guesses, streak, dayKey });
-    }
+  reportGameComplete(score: number, guesses: number, streak: number, dayKey?: string) {
+    const safeScore = parseBoundedInt(score, 0, MAX_SCORE);
+    const safeGuesses = parseBoundedInt(guesses, 0, 6);
+    const safeStreak = parseBoundedInt(streak, 0, 10000);
+    const safeDay = dayKey && isUtcDayKey(dayKey) ? dayKey : new Date().toISOString().slice(0, 10);
+    if (safeScore === null || safeGuesses === null || safeStreak === null || !isUtcDayKey(safeDay)) return;
+    this.postMessage("GAME_COMPLETE", {
+      score: safeScore,
+      guesses: safeGuesses,
+      streak: safeStreak,
+      dayKey: safeDay,
+    });
+  }
 
-    /** Submit a community clue to Devvit Redis storage */
-    submitClue(clueText: string) {
-        const dayKey = new Date().toISOString().split('T')[0];
-        this.postMessage('SUBMIT_CLUE', { clueText, dayKey });
-    }
+  submitClue(clueText: string, dayKey?: string) {
+    const clue = validateClueText(clueText);
+    const safeDay = dayKey && isUtcDayKey(dayKey) ? dayKey : new Date().toISOString().slice(0, 10);
+    if (!clue.valid || !isUtcDayKey(safeDay)) return;
+    this.postMessage("SUBMIT_CLUE", { clueText: clue.text, dayKey: safeDay });
+  }
 
-    /** Request leaderboard data from Devvit */
-    requestLeaderboard() {
-        const dayKey = new Date().toISOString().split('T')[0];
-        this.postMessage('GET_LEADERBOARD', { dayKey });
-    }
+  requestLeaderboard(dayKey?: string) {
+    const safeDay = dayKey && isUtcDayKey(dayKey) ? dayKey : new Date().toISOString().slice(0, 10);
+    if (!isUtcDayKey(safeDay)) return;
+    this.postMessage("GET_LEADERBOARD", { dayKey: safeDay });
+  }
 }
 
-// Singleton instance
 export const devvitBridge = new DevvitBridge();

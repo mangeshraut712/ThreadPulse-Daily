@@ -59,6 +59,7 @@ export interface DailyGameState {
   puzzle: Puzzle;
   playerState: PlayerDailyState;
   communityClues: CommunityClue[];
+  viewerVotes?: Record<string, "up" | "down">;
   leaderboard?: LeaderboardEntry[];
   timestamp: Date;
 }

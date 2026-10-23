@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { MobileUXConfig, SwipeActions } from '../types';
 
 // Advanced mobile gesture detection for ThreadPulse Daily 2026
 export interface GestureConfig {
@@ -178,6 +177,7 @@ export function useMobileGestures(elementRef: React.RefObject<HTMLElement>, conf
           Math.pow(touchPoint2.startY - touchPoint1.startY, 2)
         );
         
+        if (initialDistance <= 0) return;
         const scale = currentDistance / initialDistance;
         
         if (Math.abs(scale - 1) > gestureConfig.pinchZoomSensitivity) {
@@ -217,7 +217,7 @@ export function useMobileGestures(elementRef: React.RefObject<HTMLElement>, conf
         const deltaTime = Date.now() - touchPoint.startTime;
         
         const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        const velocity = distance / deltaTime;
+        const velocity = deltaTime > 0 ? distance / deltaTime : 0;
         
         if (distance > gestureConfig.swipeThreshold && velocity > gestureConfig.swipeVelocity) {
           let direction: 'up' | 'down' | 'left' | 'right';
@@ -332,7 +332,7 @@ export function useMobileGestures(elementRef: React.RefObject<HTMLElement>, conf
       const deltaTime = Date.now() - touchPoint.startTime;
       
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      const velocity = distance / deltaTime;
+      const velocity = deltaTime > 0 ? distance / deltaTime : 0;
       
       if (distance > gestureConfig.swipeThreshold && velocity > gestureConfig.swipeVelocity) {
         let direction: 'up' | 'down' | 'left' | 'right';
