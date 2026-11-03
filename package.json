@@ -62,9 +62,9 @@
   },
   "overrides": {
     "protobufjs": "7.6.6",
-    "minimatch": "9.0.9",
+    "minimatch": "11.0.4",
     "@typescript-eslint/typescript-estree": {
-      "minimatch": "9.0.9"
+      "minimatch": "11.0.4"
     }
   },
   "engines": {
