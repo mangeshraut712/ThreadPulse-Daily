@@ -1,31 +1,12 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 const PROJECT_ROOT = path.resolve(__dirname)
 
 export default defineConfig({
-  plugins: [
-    react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['icon-192.png', 'icon-512.png'],
-      manifest: false, // Use existing public/manifest.json
-      selfDestroying: false,
-      devOptions: {
-        enabled: false
-      },
-      // Disable workbox SW generation — we use our own public/sw.js
-      strategies: 'injectManifest',
-      srcDir: 'public',
-      filename: 'sw.js',
-      injectRegister: false,
-      injectManifest: {
-        injectionPoint: undefined
-      }
-    })
-  ],
+  // Vite copies public/sw.js and manifest.json unchanged; index.html registers the worker.
+  plugins: [react()],
   resolve: {
     alias: {
       '@': path.resolve(PROJECT_ROOT, 'src'),
