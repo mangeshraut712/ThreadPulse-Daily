@@ -21,13 +21,7 @@ export function normalizeGuess(value: string): string {
 }
 
 export function sanitizePlainText(value: string): string {
-  let cleaned = "";
-  for (const char of value) {
-    const code = char.charCodeAt(0);
-    if (code <= 31 || code === 127) continue;
-    cleaned += char;
-  }
-  return cleaned.trim();
+  return value.replace(/[\p{Cc}\p{Cf}]/gu, "").trim();
 }
 
 export function isUtcDayKey(value: unknown): value is string {

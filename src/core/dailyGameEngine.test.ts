@@ -103,6 +103,8 @@ describe("community clues", () => {
 
   it("validates host messages before they can be stored", () => {
     expect(validateClueText("javascript:alert(1) is not a clue").valid).toBe(false);
+    expect(validateClueText("https:\u200b//example.com is a hint").valid).toBe(false);
+    expect(validateClueText("javascript:\u200balert(1) is not a clue").valid).toBe(false);
     expect(isUtcDayKey("2026-02-31")).toBe(false);
     expect(isUtcDayKey("2026-10-23")).toBe(true);
     expect(unwrapWebViewMessage({
