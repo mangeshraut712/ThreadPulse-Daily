@@ -242,12 +242,13 @@ npm run qa
 ## 🧪 Testing
 
 ```bash
-npm run test           # Self-test suite (39 checks)
+npm run test           # Vitest unit tests
+npm run test:self      # Self-test suite (39 checks)
 npm run simulate       # Game simulation (5 scenarios)
 npm run balance        # Game balance verification
 npm run check:submission  # Submission package check
 npm run verify:final   # Final verification (56 checks)
-npm run qa             # Run all of the above
+npm run qa             # typecheck, lint, unit tests, self-test, balance, submission check, and final verification
 ```
 
 ---
