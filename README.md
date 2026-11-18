@@ -23,10 +23,11 @@ Framed captures of the live app (current UI).
 ---
 
 ### Project links
+- **Playable Web Demo (GitHub Pages):** [mangeshraut712.github.io/ThreadPulse-Daily](https://mangeshraut712.github.io/ThreadPulse-Daily/)
 - **Video Demo:** [Watch the Demo on GitHub](https://github.com/mangeshraut712/ThreadPulse-Daily/blob/main/apps/devvit/assets/Demo.mov?raw=true)
-- **Live Demo (Reddit):** [r/ThreadPulse2026](https://www.reddit.com/r/ThreadPulse2026)
+- **Reddit Developer Portal (Devvit App):** [developers.reddit.com/apps/threadpulsedaily](https://developers.reddit.com/apps/threadpulsedaily)
+- **Devpost Submission Packet:** [docs/DEVPOST.md](docs/DEVPOST.md)
 - **Source Code:** [GitHub Repository](https://github.com/mangeshraut712/ThreadPulse-Daily)
-- **Developer Portal:** [Reddit Apps Dashboard](https://developers.reddit.com/apps/threadpulsedaily)
 
 ---
 
