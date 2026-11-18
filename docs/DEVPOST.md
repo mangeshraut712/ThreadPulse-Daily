@@ -6,7 +6,8 @@ Draft submission text for **Reddit's Game of the Day Hackathon 2026** (`https://
 
 - **Project Name:** ThreadPulse Daily
 - **Elevator Pitch:** A daily Reddit-culture word puzzle built on Devvit Interactive Posts — guess today's word in 6 tries, unlock progressive hints, vote on community clues, and keep your streak alive.
-- **Live Reddit Subreddit / App:** https://www.reddit.com/r/ThreadPulse2026
+- **Playable Web Preview (GitHub Pages):** https://mangeshraut712.github.io/ThreadPulse-Daily/
+- **Reddit Subreddit / Playtest Post:** `______` *(Note: `r/ThreadPulse2026` was flagged/banned on Reddit — install `threadpulsedaily` onto a fresh playtest subreddit via `npx devvit playtest <new-sub>` or `developers.reddit.com/apps/threadpulsedaily` and paste the new post URL here before submitting)*
 - **Reddit Developer Portal:** https://developers.reddit.com/apps/threadpulsedaily
 - **Public GitHub Repository:** https://github.com/mangeshraut712/ThreadPulse-Daily
 - **Recorded Demo Video Asset:** `apps/devvit/assets/Demo.mov` (upload to YouTube/Vimeo before final Devpost form submit; YouTube URL: `______`)

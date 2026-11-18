@@ -87,10 +87,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/threadpulse/threadpulse-daily-2026"
+    "url": "https://github.com/mangeshraut712/ThreadPulse-Daily"
   },
   "bugs": {
-    "url": "https://github.com/threadpulse/threadpulse-daily-2026/issues"
+    "url": "https://github.com/mangeshraut712/ThreadPulse-Daily/issues"
   },
-  "homepage": "https://threadpulse-daily.reddit.com"
+  "homepage": "https://mangeshraut712.github.io/ThreadPulse-Daily/"
 }
