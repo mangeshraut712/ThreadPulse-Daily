@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/rules-of-hooks -- Devvit calls hooks from render callbacks, which are not React components. */
 import { Devvit, useAsync, useState } from '@devvit/public-api';
 import {
+    isPlayableUtcDayKey,
     isUtcDayKey,
     parseBoundedInt,
     sanitizeRedditUsername,
@@ -77,7 +78,7 @@ Devvit.addCustomPostType({
                     const streak = parseBoundedInt(message.data.streak, 0, 10000);
                     const guesses = parseBoundedInt(message.data.guesses, 0, 6);
                     const reportedDay = message.data.dayKey;
-                    if (score === null || streak === null || guesses === null || !isUtcDayKey(reportedDay)) break;
+                    if (score === null || streak === null || guesses === null || !isPlayableUtcDayKey(reportedDay)) break;
 
                     await context.redis.zAdd(`leaderboard:${reportedDay}`, {
                         member: player,
@@ -88,7 +89,7 @@ Devvit.addCustomPostType({
                 case 'SUBMIT_CLUE': {
                     const clue = validateClueText(message.data.clueText);
                     const reportedDay = message.data.dayKey;
-                    if (!clue.valid || !isUtcDayKey(reportedDay)) break;
+                    if (!clue.valid || !isPlayableUtcDayKey(reportedDay)) break;
 
                     const authorKey = `clue-author:${reportedDay}:${player}`;
                     const alreadySubmitted = await context.redis.get(authorKey);

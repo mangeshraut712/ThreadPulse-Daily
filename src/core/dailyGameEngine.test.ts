@@ -7,7 +7,7 @@ import {
   rankCommunityClues,
   validateCommunityClue,
 } from "./dailyGameEngine";
-import { clueContainsAnswer, isUtcDayKey, unwrapWebViewMessage, validateClueText } from "./safety";
+import { clueContainsAnswer, isPlayableUtcDayKey, isUtcDayKey, unwrapWebViewMessage, validateClueText } from "./safety";
 import { isTrustedMessageOrigin } from "../utils/messageOrigin";
 import type { CommunityClue } from "../types";
 
@@ -107,6 +107,12 @@ describe("community clues", () => {
     expect(validateClueText("javascript:\u200balert(1) is not a clue").valid).toBe(false);
     expect(isUtcDayKey("2026-02-31")).toBe(false);
     expect(isUtcDayKey("2026-10-23")).toBe(true);
+    const now = new Date("2026-10-23T00:30:00Z");
+    expect(isPlayableUtcDayKey("2026-10-23", now)).toBe(true);
+    expect(isPlayableUtcDayKey("2026-10-22", now)).toBe(true);
+    expect(isPlayableUtcDayKey("2026-10-21", now)).toBe(false);
+    expect(isPlayableUtcDayKey("2026-10-24", now)).toBe(false);
+    expect(isPlayableUtcDayKey("2030-01-01", now)).toBe(false);
     expect(unwrapWebViewMessage({
       type: "devvit-message",
       data: { message: { type: "GAME_COMPLETE", data: { score: 10 } } },

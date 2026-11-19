@@ -36,6 +36,18 @@ export function isUtcDayKey(value: unknown): value is string {
   );
 }
 
+/**
+ * A day key a client may report results for: today in UTC, or yesterday so a
+ * puzzle finished just after UTC midnight still counts. Anything else would let
+ * a client write leaderboards and clues for arbitrary days.
+ */
+export function isPlayableUtcDayKey(value: unknown, now: Date = new Date()): value is string {
+  if (!isUtcDayKey(value)) return false;
+  const today = now.toISOString().slice(0, 10);
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return value === today || value === yesterday;
+}
+
 export function parseBoundedInt(value: unknown, min: number, max: number): number | null {
   if (typeof value !== "number" || !Number.isFinite(value)) return null;
   const rounded = Math.round(value);
