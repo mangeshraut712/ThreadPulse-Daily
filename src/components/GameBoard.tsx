@@ -210,7 +210,7 @@ function ClueList({
               >
                 ▲
               </button>
-              <span className="clue-vote-count">{clue.upvotes}</span>
+              <span className="clue-vote-count">{Math.max(0, clue.upvotes)}</span>
               <button
                 className="clue-vote-btn"
                 aria-label={`Downvote clue by ${authorLabel}`}
