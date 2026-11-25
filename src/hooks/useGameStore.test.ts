@@ -46,6 +46,47 @@ describe("useGameStore", () => {
     expect(useGameStore.getState().currentGame?.playerState.streak).toBe(0);
   });
 
+  it("does not invent a point when a downvote cannot go below zero", async () => {
+    await useGameStore.getState().refreshGame();
+    const game = useGameStore.getState().currentGame;
+    expect(game).toBeTruthy();
+    if (!game) return;
+
+    const clueId = "clue-zero";
+    useGameStore.setState({
+      currentGame: {
+        ...game,
+        communityClues: [
+          {
+            id: clueId,
+            text: "Both players notice the pattern",
+            author: "neighbor",
+            upvotes: 0,
+            modBoost: 0,
+            aiAnalysis: {
+              sentiment: 0,
+              creativity: 0.5,
+              difficulty: 0.5,
+              engagement_prediction: 0.5,
+              toxicity_score: 0,
+              quality_score: 0.5,
+            },
+            createdAt: new Date("2026-10-23T12:00:00Z"),
+            approved: true,
+          },
+        ],
+        viewerVotes: {},
+      },
+    });
+
+    useGameStore.getState().voteClue(clueId, "down");
+    expect(useGameStore.getState().currentGame?.communityClues[0]?.upvotes).toBe(0);
+    expect(useGameStore.getState().currentGame?.viewerVotes?.[clueId]).toBeUndefined();
+
+    useGameStore.getState().voteClue(clueId, "down");
+    expect(useGameStore.getState().currentGame?.communityClues[0]?.upvotes).toBe(0);
+  });
+
   it("rejects a clue that contains the answer and accepts a different clue", async () => {
     await useGameStore.getState().refreshGame();
     const answer = useGameStore.getState().currentGame?.puzzle.answer ?? "";

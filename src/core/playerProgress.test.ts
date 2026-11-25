@@ -71,6 +71,9 @@ describe("clue votes", () => {
   it("toggles a vote without driving the count below zero", () => {
     expect(applyVote(1, null, "up")).toEqual({ upvotes: 2, vote: "up" });
     expect(applyVote(2, "up", "up")).toEqual({ upvotes: 1, vote: null });
-    expect(applyVote(0, null, "down")).toEqual({ upvotes: 0, vote: "down" });
+    expect(applyVote(1, null, "down")).toEqual({ upvotes: 0, vote: "down" });
+    expect(applyVote(0, "down", "down")).toEqual({ upvotes: 1, vote: null });
+    expect(applyVote(0, null, "down")).toEqual({ upvotes: 0, vote: null });
+    expect(applyVote(1, "up", "down")).toEqual({ upvotes: 1, vote: "up" });
   });
 });

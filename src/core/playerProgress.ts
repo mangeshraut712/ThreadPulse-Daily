@@ -69,16 +69,23 @@ export function applyVote(
   previous: VoteDirection | null,
   requested: VoteDirection
 ): { upvotes: number; vote: VoteDirection | null } {
-  let score = Number.isFinite(upvotes) ? upvotes : 0;
-  if (previous === "up") score -= 1;
-  if (previous === "down") score += 1;
+  const current = Number.isFinite(upvotes) ? upvotes : 0;
+  let withoutPrevious = current;
+  if (previous === "up") withoutPrevious -= 1;
+  if (previous === "down") withoutPrevious += 1;
 
   if (previous === requested) {
-    return { upvotes: Math.max(0, score), vote: null };
+    return { upvotes: Math.max(0, withoutPrevious), vote: null };
   }
 
-  score += requested === "up" ? 1 : -1;
-  return { upvotes: Math.max(0, score), vote: requested };
+  const next = withoutPrevious + (requested === "up" ? 1 : -1);
+  // A downvote that cannot move the count must not be stored. Undoing it later
+  // would add a point that was never removed, because the count is floored at 0.
+  if (next < 0) {
+    return { upvotes: Math.max(0, current), vote: previous };
+  }
+
+  return { upvotes: next, vote: requested };
 }
 
 function readJson(storage: KeyValueStorage, key: string): unknown {
