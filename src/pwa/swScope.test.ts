@@ -4,8 +4,11 @@ import { describe, expect, it } from "vitest";
 import manifest from "../../public/manifest.json";
 import {
   PRECACHE_PATHS,
+  builtAssetPaths,
   isStaticAsset,
   notificationDestination,
+  precacheManifestSource,
+  precacheRequestUrls,
   relativeToScope,
   urlInScope,
 } from "../../public/sw-scope.js";
@@ -41,9 +44,37 @@ describe("service worker scope", () => {
     expect(notificationDestination(PAGES_SCOPE, PAGES_ORIGIN, "")).toBe(PAGES_SCOPE);
   });
 
+  it("precaches built JavaScript and CSS on install, including under a Pages base", () => {
+    const files = [
+      "assets/js/index-abc.js",
+      "assets/js/vendor-def.js",
+      "assets/js/ui-ghi.js",
+      "assets/css/index-jkl.css",
+      "assets/js/index-abc.js.map",
+      "sw.js",
+      "sw-scope.js",
+      "../secret.js",
+      "/etc/passwd.js",
+    ];
+    expect(builtAssetPaths(files)).toEqual([
+      "assets/css/index-jkl.css",
+      "assets/js/index-abc.js",
+      "assets/js/ui-ghi.js",
+      "assets/js/vendor-def.js",
+    ]);
+    const urls = precacheRequestUrls(PAGES_SCOPE, files);
+    expect(urls).toContain("https://mangeshraut712.github.io/ThreadPulse-Daily/index.html");
+    expect(urls).toContain("https://mangeshraut712.github.io/ThreadPulse-Daily/assets/js/index-abc.js");
+    expect(urls).toContain("https://mangeshraut712.github.io/ThreadPulse-Daily/assets/js/vendor-def.js");
+    expect(urls).toContain("https://mangeshraut712.github.io/ThreadPulse-Daily/assets/css/index-jkl.css");
+    expect(urls.some((url) => url.includes("..") || url.endsWith("/etc/passwd.js"))).toBe(false);
+    expect(precacheManifestSource(files)).toContain('"assets/js/vendor-def.js"');
+  });
+
   it("loads the tested scope helper from the worker", () => {
     const worker = readFileSync(path.join(process.cwd(), "public/sw.js"), "utf8");
     expect(worker).toContain('from "./sw-scope.js"');
+    expect(worker).toContain('from "./precache-manifest.js"');
     expect(worker).not.toContain('"/index.html"');
     expect(worker).toContain("self.registration.scope");
   });

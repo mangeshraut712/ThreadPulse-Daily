@@ -28,6 +28,34 @@ export function urlInScope(scope, relativePath) {
   return new URL(relativePath, base).href;
 }
 
+const BUILT_ASSET_FILE = /\.(?:js|css)$/;
+const WORKER_FILES = new Set(["sw.js", "sw-scope.js", "precache-manifest.js"]);
+
+export function builtAssetPaths(fileNames) {
+  const paths = new Set();
+  for (const fileName of fileNames) {
+    if (typeof fileName !== "string") continue;
+    const normalized = fileName.replace(/\\/g, "/");
+    if (normalized.startsWith("/") || normalized.split("/").includes("..")) continue;
+    if (!BUILT_ASSET_FILE.test(normalized) || normalized.endsWith(".map")) continue;
+    if (WORKER_FILES.has(normalized)) continue;
+    paths.add(normalized);
+  }
+  return [...paths].sort();
+}
+
+export function precacheRequestUrls(scope, builtAssets) {
+  const relative = [...PRECACHE_PATHS];
+  for (const asset of builtAssetPaths(Array.isArray(builtAssets) ? builtAssets : [])) {
+    if (!relative.includes(asset)) relative.push(asset);
+  }
+  return relative.map((path) => urlInScope(scope, path));
+}
+
+export function precacheManifestSource(fileNames) {
+  return `export const BUILT_ASSETS = ${JSON.stringify(builtAssetPaths(fileNames))};\n`;
+}
+
 export function notificationDestination(scope, origin, target) {
   if (typeof target !== "string" || target.length === 0) return scope;
   try {

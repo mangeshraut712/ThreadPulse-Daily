@@ -1,17 +1,18 @@
+import { BUILT_ASSETS } from "./precache-manifest.js";
 import {
-  PRECACHE_PATHS,
   isStaticAsset,
   notificationDestination,
+  precacheRequestUrls,
   relativeToScope,
   urlInScope,
 } from "./sw-scope.js";
 
-const CACHE_NAME = "threadpulse-daily-v2026.11.25";
+const CACHE_NAME = "threadpulse-daily-v2026.11.25-assets";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_PATHS.map((path) => urlInScope(self.registration.scope, path))))
+      .then((cache) => cache.addAll(precacheRequestUrls(self.registration.scope, BUILT_ASSETS)))
       .then(() => self.skipWaiting())
   );
 });
