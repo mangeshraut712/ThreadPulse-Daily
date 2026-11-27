@@ -1,10 +1,18 @@
-const CACHE_NAME = "threadpulse-daily-v2026.10.23";
-const PRECACHE_URLS = ["/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png"];
+import { BUILT_ASSETS } from "./precache-manifest.js";
+import {
+  isStaticAsset,
+  notificationDestination,
+  precacheRequestUrls,
+  relativeToScope,
+  urlInScope,
+} from "./sw-scope.js";
+
+const CACHE_NAME = "threadpulse-daily-v2026.11.25-assets";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then((cache) => cache.addAll(precacheRequestUrls(self.registration.scope, BUILT_ASSETS)))
       .then(() => self.skipWaiting())
   );
 });
@@ -27,10 +35,6 @@ function isSameOrigin(url) {
   }
 }
 
-function isStaticPath(pathname) {
-  return PRECACHE_URLS.includes(pathname) || /\.(?:js|css|png|webp|svg|ico|woff2)$/.test(pathname);
-}
-
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
@@ -43,15 +47,16 @@ async function cacheFirst(request) {
 }
 
 async function networkFirstNavigation(request) {
+  const shell = urlInScope(self.registration.scope, "index.html");
   try {
     const response = await fetch(request);
     if (response.ok) {
       const cache = await caches.open(CACHE_NAME);
-      await cache.put("/index.html", response.clone());
+      await cache.put(shell, response.clone());
     }
     return response;
   } catch {
-    const cached = await caches.match("/index.html");
+    const cached = await caches.match(shell);
     if (cached) return cached;
     return new Response("Offline", { status: 503, statusText: "Service Unavailable" });
   }
@@ -66,14 +71,19 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(networkFirstNavigation(request));
     return;
   }
-  if (isStaticPath(url.pathname)) {
+
+  const relative = relativeToScope(self.registration.scope, url.pathname);
+  if (relative && isStaticAsset(relative)) {
     event.respondWith(cacheFirst(request));
   }
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = event.notification?.data?.url;
-  const destination = typeof target === "string" && target.startsWith("/") ? target : "/";
+  const destination = notificationDestination(
+    self.registration.scope,
+    self.location.origin,
+    event.notification?.data?.url
+  );
   event.waitUntil(clients.openWindow(destination));
 });
