@@ -74,11 +74,11 @@ export function applyVote(
   if (previous === "down") score += 1;
 
   if (previous === requested) {
-    return { upvotes: Math.max(0, score), vote: null };
+    return { upvotes: score, vote: null };
   }
 
   score += requested === "up" ? 1 : -1;
-  return { upvotes: Math.max(0, score), vote: requested };
+  return { upvotes: score, vote: requested };
 }
 
 function readJson(storage: KeyValueStorage, key: string): unknown {
@@ -216,7 +216,7 @@ function parseClue(value: unknown): CommunityClue | null {
     id: clue.id,
     text,
     author: clue.author,
-    upvotes: typeof clue.upvotes === "number" && Number.isFinite(clue.upvotes) ? Math.max(0, Math.round(clue.upvotes)) : 0,
+    upvotes: typeof clue.upvotes === "number" && Number.isFinite(clue.upvotes) ? Math.round(clue.upvotes) : 0,
     modBoost: typeof clue.modBoost === "number" && Number.isFinite(clue.modBoost) ? Math.max(0, clue.modBoost) : 0,
     aiAnalysis: defaultAnalysis(),
     createdAt: Number.isNaN(createdAt.getTime()) ? new Date(0) : createdAt,
