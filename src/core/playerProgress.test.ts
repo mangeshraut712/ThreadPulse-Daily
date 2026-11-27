@@ -68,12 +68,30 @@ describe("saved rounds", () => {
 });
 
 describe("clue votes", () => {
-  it("toggles a vote without driving the count below zero", () => {
+  it("toggles a vote and keeps a clamped downvote as a signed count", () => {
     expect(applyVote(1, null, "up")).toEqual({ upvotes: 2, vote: "up" });
     expect(applyVote(2, "up", "up")).toEqual({ upvotes: 1, vote: null });
-    expect(applyVote(1, null, "down")).toEqual({ upvotes: 0, vote: "down" });
-    expect(applyVote(0, "down", "down")).toEqual({ upvotes: 1, vote: null });
-    expect(applyVote(0, null, "down")).toEqual({ upvotes: 0, vote: null });
-    expect(applyVote(1, "up", "down")).toEqual({ upvotes: 1, vote: "up" });
+    expect(applyVote(0, null, "down")).toEqual({ upvotes: -1, vote: "down" });
+  });
+
+  it("reverting a downvote at zero does not inflate the count", () => {
+    const after = applyVote(0, null, "down");
+    const reverted = applyVote(after.upvotes, after.vote, "down");
+    expect(reverted.upvotes).toBe(0);
+    expect(reverted.vote).toBeNull();
+  });
+
+  it("switching from a clamped downvote to an upvote adds one, not two", () => {
+    const after = applyVote(0, null, "down");
+    const switched = applyVote(after.upvotes, after.vote, "up");
+    expect(switched.upvotes).toBe(1);
+    expect(switched.vote).toBe("up");
+  });
+
+  it("reverting a downvote that actually landed restores the previous count", () => {
+    const after = applyVote(1, null, "down");
+    expect(after).toEqual({ upvotes: 0, vote: "down" });
+    const reverted = applyVote(after.upvotes, after.vote, "down");
+    expect(reverted).toEqual({ upvotes: 1, vote: null });
   });
 });

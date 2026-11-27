@@ -69,23 +69,16 @@ export function applyVote(
   previous: VoteDirection | null,
   requested: VoteDirection
 ): { upvotes: number; vote: VoteDirection | null } {
-  const current = Number.isFinite(upvotes) ? upvotes : 0;
-  let withoutPrevious = current;
-  if (previous === "up") withoutPrevious -= 1;
-  if (previous === "down") withoutPrevious += 1;
+  let score = Number.isFinite(upvotes) ? upvotes : 0;
+  if (previous === "up") score -= 1;
+  if (previous === "down") score += 1;
 
   if (previous === requested) {
-    return { upvotes: Math.max(0, withoutPrevious), vote: null };
+    return { upvotes: score, vote: null };
   }
 
-  const next = withoutPrevious + (requested === "up" ? 1 : -1);
-  // A downvote that cannot move the count must not be stored. Undoing it later
-  // would add a point that was never removed, because the count is floored at 0.
-  if (next < 0) {
-    return { upvotes: Math.max(0, current), vote: previous };
-  }
-
-  return { upvotes: next, vote: requested };
+  score += requested === "up" ? 1 : -1;
+  return { upvotes: score, vote: requested };
 }
 
 function readJson(storage: KeyValueStorage, key: string): unknown {
@@ -223,7 +216,7 @@ function parseClue(value: unknown): CommunityClue | null {
     id: clue.id,
     text,
     author: clue.author,
-    upvotes: typeof clue.upvotes === "number" && Number.isFinite(clue.upvotes) ? Math.max(0, Math.round(clue.upvotes)) : 0,
+    upvotes: typeof clue.upvotes === "number" && Number.isFinite(clue.upvotes) ? Math.round(clue.upvotes) : 0,
     modBoost: typeof clue.modBoost === "number" && Number.isFinite(clue.modBoost) ? Math.max(0, clue.modBoost) : 0,
     aiAnalysis: defaultAnalysis(),
     createdAt: Number.isNaN(createdAt.getTime()) ? new Date(0) : createdAt,

@@ -40,13 +40,31 @@ describe("useGameStore", () => {
     expect(localStorage.getItem(STORAGE_KEYS.progress)).toContain(answer);
   });
 
+  it("scores the streak day earned by today's solve", async () => {
+    writeStreak(localStorage, { lastSolvedDay: "2026-10-22", streakDays: 1 });
+    await useGameStore.getState().refreshGame();
+    expect(useGameStore.getState().currentGame?.playerState.streak).toBe(1);
+
+    const answer = useGameStore.getState().currentGame?.puzzle.answer ?? "";
+    await useGameStore.getState().submitGuess(answer);
+
+    const solved = useGameStore.getState().currentGame?.playerState;
+    expect(solved?.completed).toBe(true);
+    expect(solved?.streak).toBe(2);
+    expect(solved?.score).toBe(101);
+
+    await useGameStore.getState().refreshGame();
+    expect(useGameStore.getState().currentGame?.playerState.score).toBe(101);
+    expect(useGameStore.getState().currentGame?.playerState.streak).toBe(2);
+  });
+
   it("does not display a streak that was already broken", async () => {
     writeStreak(localStorage, { lastSolvedDay: "2026-10-01", streakDays: 12 });
     await useGameStore.getState().refreshGame();
     expect(useGameStore.getState().currentGame?.playerState.streak).toBe(0);
   });
 
-  it("does not invent a point when a downvote cannot go below zero", async () => {
+  it("does not invent a point when a downvote at zero is reversed", async () => {
     await useGameStore.getState().refreshGame();
     const game = useGameStore.getState().currentGame;
     expect(game).toBeTruthy();
@@ -80,8 +98,8 @@ describe("useGameStore", () => {
     });
 
     useGameStore.getState().voteClue(clueId, "down");
-    expect(useGameStore.getState().currentGame?.communityClues[0]?.upvotes).toBe(0);
-    expect(useGameStore.getState().currentGame?.viewerVotes?.[clueId]).toBeUndefined();
+    expect(useGameStore.getState().currentGame?.communityClues[0]?.upvotes).toBe(-1);
+    expect(useGameStore.getState().currentGame?.viewerVotes?.[clueId]).toBe("down");
 
     useGameStore.getState().voteClue(clueId, "down");
     expect(useGameStore.getState().currentGame?.communityClues[0]?.upvotes).toBe(0);
