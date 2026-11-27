@@ -10,6 +10,7 @@ import {
   activeStreakDays,
   applyVote,
   browserStorage,
+  emptyStreak,
   nextStreakRecord,
   readClues,
   readProgress,
@@ -165,11 +166,15 @@ export const useGameStore = create<GameStoreResult>((set, get) => ({
       const elapsed = Number.isNaN(startedAt.getTime())
         ? 0
         : Math.max(0, Math.round((Date.now() - startedAt.getTime()) / 1000));
+      const storage = browserStorage();
+      const streakDays = evaluation.correct
+        ? nextStreakRecord(storage ? readStreak(storage) : emptyStreak(), game.dayKey).streakDays
+        : game.playerState.streak;
       const nextScore = computeScore({
         correct: evaluation.correct,
         hintsUsed: game.playerState.hintsUnlocked,
         timeSeconds: elapsed,
-        streakDays: game.playerState.streak,
+        streakDays,
       });
       const guesses = [
         ...game.playerState.guesses,
@@ -198,6 +203,7 @@ export const useGameStore = create<GameStoreResult>((set, get) => ({
             guesses,
             completed: evaluation.correct,
             score: evaluation.correct ? nextScore : 0,
+            streak: streakDays,
             timeCompleted: evaluation.correct ? new Date() : game.playerState.timeCompleted,
           },
         },
@@ -210,6 +216,7 @@ export const useGameStore = create<GameStoreResult>((set, get) => ({
       const streak = commitSolvedStreak(dayKey);
       set((state) => {
         if (!state.currentGame || state.currentGame.dayKey !== dayKey) return state;
+        if (state.currentGame.playerState.streak === streak) return state;
         return {
           currentGame: {
             ...state.currentGame,

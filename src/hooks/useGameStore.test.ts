@@ -40,6 +40,24 @@ describe("useGameStore", () => {
     expect(localStorage.getItem(STORAGE_KEYS.progress)).toContain(answer);
   });
 
+  it("scores the streak day earned by today's solve", async () => {
+    writeStreak(localStorage, { lastSolvedDay: "2026-10-22", streakDays: 1 });
+    await useGameStore.getState().refreshGame();
+    expect(useGameStore.getState().currentGame?.playerState.streak).toBe(1);
+
+    const answer = useGameStore.getState().currentGame?.puzzle.answer ?? "";
+    await useGameStore.getState().submitGuess(answer);
+
+    const solved = useGameStore.getState().currentGame?.playerState;
+    expect(solved?.completed).toBe(true);
+    expect(solved?.streak).toBe(2);
+    expect(solved?.score).toBe(101);
+
+    await useGameStore.getState().refreshGame();
+    expect(useGameStore.getState().currentGame?.playerState.score).toBe(101);
+    expect(useGameStore.getState().currentGame?.playerState.streak).toBe(2);
+  });
+
   it("does not display a streak that was already broken", async () => {
     writeStreak(localStorage, { lastSolvedDay: "2026-10-01", streakDays: 12 });
     await useGameStore.getState().refreshGame();
